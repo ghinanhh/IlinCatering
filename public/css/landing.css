@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: #fff;
+    color: #222;
+    line-height: 1.6;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 8%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.logo img {
+    height: 45px;
+}
+
+.navbar nav {
+    display: flex;
+    align-items: center;
+}
+
+.navbar nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.navbar nav a:hover, .navbar nav a.active {
+    color: #000;
+    font-weight: 700;
+}
+/* ANIMASI BUTTON LOGIN */
+.btn-login {
+    background: #f4e93b;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transisi halus */
+}
+
+.btn-login:hover {
+    background: #e5d800;
+    transform: translateY(-2px); /* Melayang sedikit */
+    box-shadow: 0 5px 15px rgba(244, 233, 59, 0.4);
+}
+
+.btn-login:active {
+    transform: translateY(0); /* Efek ditekan */
+}
+
+/* ================= HERO ================= */
+.hero {
+    display: flex;
+    height: 100vh;
+}
+
+.hero-left {
+    width: 50%;
+    padding: 120px 80px;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-left h1 {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.highlight {
+    color: #e5d800;
+}
+
+/* ANIMASI BUTTON PRIMARY (LIHAT MENU) */
+.btn-primary {
+    margin-top: 30px;
+    padding: 14px 28px;
+    background: red;
+    color: white;
+    border-radius: 30px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek pegas/bounce */
+}
+
+.btn-primary:hover {
+    background: #cc0000;
+    transform: scale(1.05); /* Membesar sedikit */
+    box-shadow: 0 8px 20px rgba(255, 0, 0, 0.3);
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+}
+
+.hero-right {
+    position: relative;
+    width: 50%;
+    overflow: hidden;
+}
+
+.liquid-bg {
+    position: absolute;
+    width: 95%;
+    height: 120%;
+    top: -15%;
+    right: -20%;
+    background-color: #0d0d0d;
+    background-image: url('../images/coba.jpg'); 
+    background-size: 400px;
+    background-repeat: repeat;
+    background-position: center;
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transition: transform 0.3s ease-out;
+    pointer-events: none; /* Agar klik tembus ke bawah */
+}
+
+.food-img {
+    position: relative;
+    z-index: 2;
+    width: 65%;
+    display: block;
+    margin: 110px auto 0;
+    transform: translateX(-60px);
+}
+
+/* ================= INFO SECTION ================= */
+.info-section {
+    margin-top: -70px;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+}
+
+.info-container {
+    background: #f7f8c9;
+    border-radius: 30px;
+    padding: 50px 60px;
+    max-width: 1100px;
+    width: 90%;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    box-shadow: 0 -15px 30px rgba(0,0,0,0.1);
+}
+
+.info-item { text-align: center; width: 260px; }
+
+.info-icon {
+    width: 60px; height: 60px;
+    background: #f4e93b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 24px;
+}
+
+.divider { width: 2px; height: 120px; background: #cfcfcf; }
+
+/* ================= MENU SECTION ================= */
+.menu-section {
+    text-align: center;
+    padding: 80px 0 120px;
+}
+
+.menu-list {
+    display: flex;
+    justify-content: center;
+    gap: 80px;
+    margin-bottom: 50px;
+}
+
+.menu-card img {
+    width: 170px;
+    border-radius: 10px;
+    transition: 0.4s;
+}
+
+.menu-card:hover img {
+    transform: translateY(-10px) rotate(2deg); /* Melayang & miring sedikit */
+}
+
+/* ANIMASI BUTTON LEBIH BANYAK MENU */
+.btn-more {
+    background: #f4e93b;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-more:hover {
+    background: #222;
+    color: #f4e93b;
+    transform: scale(1.1);
+}
+
+/* ================= KATEGORI MENU ================= */
+.category-section {
+    background: #f0f0f0;
+    padding: 100px 80px;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 50px;
+}
+
+/* ANIMASI BUTTON KATEGORI */
+.btn-category {
+    background: #e21c23;
+    color: #fff;
+    padding: 14px 26px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-category:hover {
+    background: #222;
+    letter-spacing: 1px; /* Teks sedikit merenggang saat hover */
+}
+
+.category-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+.category-card {
+    position: relative;
+    height: 220px;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.category-card img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: 0.5s;
+}
+
+.category-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0.2));
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    color: #fff;
+}
+
+.category-card:hover img {
+    transform: scale(1.15);
+}
+
+/* ================= ANIMATION (FADE IN) ================= */
+.fade-up {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s ease;
+}
+
+.fade-up.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ================= FOOTER ================= */
+.footer {
+    background: #0f0f0f;
+    color: #eee;
+    padding: 80px 80px 30px;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 50px;
+}
+
+.footer-brand img { height: 45px; margin-bottom: 20px; }
+
+.footer-links a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin-bottom: 12px;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.footer-links a:hover {
+    color: #f4e93b;
+    padding-left: 5px; /* Bergeser sedikit saat hover */
+}
+
+.footer-bottom {
+    border-top: 1px solid #222;
+    padding-top: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1024px) {
+    .category-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .navbar { padding: 20px 30px; }
+    .hero { flex-direction: column; height: auto; text-align: center; }
+    .hero-left, .hero-right { width: 100%; padding: 60px 30px; }
+    .footer-container { grid-template-columns: 1fr; text-align: center; }
+}

@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: #fff;
+    color: #222;
+    line-height: 1.6;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 8%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.logo img {
+    height: 45px;
+}
+
+.navbar nav {
+    display: flex;
+    align-items: center;
+}
+
+.navbar nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.navbar nav a:hover, .navbar nav a.active {
+    color: #000;
+    font-weight: 700;
+}
+/* ANIMASI BUTTON LOGIN */
+.btn-login {
+    background: #f4e93b;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transisi halus */
+}
+
+.btn-login:hover {
+    background: #e5d800;
+    transform: translateY(-2px); /* Melayang sedikit */
+    box-shadow: 0 5px 15px rgba(244, 233, 59, 0.4);
+}
+
+.btn-login:active {
+    transform: translateY(0); /* Efek ditekan */
+}
+
+/* ================= HERO ================= */
+.hero {
+    display: flex;
+    height: 100vh;
+}
+
+.hero-left {
+    width: 50%;
+    padding: 120px 80px;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-left h1 {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.highlight {
+    color: #e5d800;
+}
+
+/* Sesuaikan path background hero agar gambar muncul */
+.contact-hero {
+    height: 300px;
+    background-color: #2D2A44; /* Warna gelap seperti di gambar kontak.png */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+}
+
+.contact-hero h3 { font-size: 20px; font-weight: 400; margin-bottom: 10px; }
+.contact-hero h1 { font-size: 40px; font-weight: 700; }
+
+/* Contact Section */
+.contact-main {
+    padding: 60px 80px;
+    background-color: #fff;
+}
+
+.contact-card {
+    background-color: #FFFDE7; /* Warna kuning sangat muda dari gambar */
+    border-radius: 15px;
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 40px;
+    font-weight: 700;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Info Column */
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-item img { width: 30px; }
+.info-item p { font-size: 14px; color: #333; line-height: 1.5; }
+
+/* Form Column */
+.form-column {
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.form-note { font-size: 12px; text-align: center; margin-bottom: 20px; color: #666; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.form-group label span { color: red; }
+
+.form-group input, .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 13px;
+    background-color: #f9f9f9;
+}
+
+.form-group textarea { height: 100px; resize: none; }
+
+.btn-send {
+    width: 100%;
+    background-color: #F4E93B;
+    border: none;
+    padding: 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Maps Column */
+.maps-column h3 { text-align: center; margin-bottom: 20px; }
+.map-placeholder {
+    background: #F4E93B; /* Background kuning di belakang peta */
+    padding: 10px;
+    border-radius: 5px;
+}
+.map-placeholder img { width: 100%; border-radius: 5px; }
+
+/* Responsive */
+@media (max-width: 992px) {
+    .contact-grid { grid-template-columns: 1fr; }
+    .contact-main { padding: 30px 20px; }
+}
+
+/* ================= FOOTER ================= */
+.footer {
+    background: #0f0f0f;
+    color: #eee;
+    padding: 80px 80px 30px;
+}
+
+.footer-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 50px;
+}
+
+.footer-brand img { height: 45px; margin-bottom: 20px; }
+
+.footer-links a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin-bottom: 12px;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.footer-links a:hover {
+    color: #f4e93b;
+    padding-left: 5px; /* Bergeser sedikit saat hover */
+}
+
+.footer-bottom {
+    border-top: 1px solid #222;
+    padding-top: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 1024px) {
+    .category-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .navbar { padding: 20px 30px; }
+    .hero { flex-direction: column; height: auto; text-align: center; }
+    .hero-left, .hero-right { width: 100%; padding: 60px 30px; }
+    .footer-container { grid-template-columns: 1fr; text-align: center; }
+}
