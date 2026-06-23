@@ -32,7 +32,6 @@ class PelangganController extends Controller
         $search = $request->query('search');
         $categoryFilter = $request->query('category');
 
-        // 🌟 PERBAIKAN: Hanya mengambil menu yang statusnya aktif (is_active = true)
         $menus = Menu::where('is_active', true)
             ->where(function($mainQuery) use ($search, $categoryFilter) {
                 if (!empty($search)) {
@@ -93,7 +92,6 @@ class PelangganController extends Controller
     {
         $cartItems = Cart::with('menu')->where('user_id', Auth::id())->get();
         
-        // 🌟 DIUBAH: Mengambil semua tanggal yang sudah memiliki order aktif agar bisa dideteksi oleh kalender depan
         $bookedDates = Order::whereNotIn('status', ['batal', 'canceled', 'expired'])
             ->pluck('event_date')
             ->toArray();
@@ -108,9 +106,8 @@ class PelangganController extends Controller
             'event_date' => 'required', 'event_time' => 'required', 'cart_notes' => 'nullable|array'
         ]);
 
-        // 🌟 FIX SISTEM: Validasi Pengunci Kuota (Maksimal 1 Pesanan per Hari)
         $existingOrderCount = Order::where('event_date', $request->event_date)
-            ->whereNotIn('status', ['batal', 'canceled', 'expired']) // Mengabaikan pesanan yang sudah dibatalkan
+            ->whereNotIn('status', ['batal', 'canceled', 'expired'])
             ->count();
 
         if ($existingOrderCount >= 1) {
@@ -163,7 +160,15 @@ class PelangganController extends Controller
 
     public function storeReview(Request $request)
     {
-        $request->validate(['order_id' => 'required', 'menu_id' => 'required', 'rating' => 'required', 'comment' => 'required']);
+        // 🌟 PERBAIKAN 1: Menambahkan validasi 'user_title'
+        $request->validate([
+            'order_id' => 'required', 
+            'menu_id' => 'required', 
+            'rating' => 'required', 
+            'comment' => 'required',
+            'user_title' => 'nullable|string'
+        ]);
+        
         $imagePath = null;
         
         if ($request->hasFile('image')) {
@@ -181,12 +186,18 @@ class PelangganController extends Controller
             $imagePath = 'storage/reviews/' . $filename;
         }
 
+        // 🌟 PERBAIKAN 2: Memasukkan data 'user_title' ke database
         Review::create([
-            'user_id' => Auth::id(), 'order_id' => $request->order_id, 'menu_id' => $request->menu_id,
-            'rating' => $request->rating, 'comment' => $request->comment, 'image' => $imagePath
+            'user_id' => Auth::id(), 
+            'order_id' => $request->order_id, 
+            'menu_id' => $request->menu_id,
+            'rating' => $request->rating, 
+            'comment' => $request->comment, 
+            'image' => $imagePath,
+            'user_title' => $request->user_title 
         ]);
 
-        return redirect()->route('pelanggan.dashboard')->with('success', 'Ulasan dikirim!');
+        return redirect()->back()->with('success', 'Ulasan dikirim!');
     }
 
     public function handleNotification(Request $request)
