@@ -40,9 +40,9 @@
                             <p class="font-black text-slate-900 text-sm sm:text-base uppercase tracking-wider mb-3">Ilin Catering menyediakan berbagai macam catering pilihan seperti:</p>
                             <ul class="list-disc pl-5 space-y-1.5 text-slate-700 text-xs sm:text-sm font-semibold">
                                 <li>Paket Prasmanan Ilin Catering</li>
-                                <li>Nasi Box / Nasi Kotak Instansi & Acara</li>
-                                <li>Paket Snack Box / Kue Kotak Syukuran</li>
-                                <li>Nasi Tumpeng & Hidangan Hantaran Acara</li>
+                                <li>Nasi Box untuk Berbagai Acara</li>
+                                <li>Snack Box dan Kue Kotak</li>
+                                <li>Nasi Tumpeng</li>
                             </ul>
                         </div>
                         

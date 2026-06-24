@@ -29,7 +29,7 @@
                         Sajian Lezat untuk <br class="hidden lg:block"><span class="text-orange-600">Momen Spesial</span> Anda.
                     </h1>
                     <p class="text-base sm:text-lg text-slate-600 mt-6 max-w-lg mx-auto lg:mx-0">
-                        Ilin Catering menyediakan berbagai pilihan menu sehat, enak, dan terjangkau untuk acara kantor, pernikahan, hingga harian.
+                        Ilin Catering menyediakan berbagai pilihan menu sehat, enak, dan terjangkau untuk acara kantor hingga kebutuhan harian.
                     </p>
                     <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 mt-8">
                         <a href="{{ Auth::check() ? route('pelanggan.menu') : '#kategori' }}" 
@@ -75,7 +75,7 @@
                         <i class="fa-solid fa-utensils"></i>
                     </div>
                     <h3 class="text-xl sm:text-2xl font-bold mt-6">Prasmanan</h3>
-                    <p class="text-slate-500 mt-4 text-sm leading-relaxed">Sajian prasmanan elegan untuk pernikahan atau pesta besar dengan dekorasi cantik.</p>
+                    <p class="text-slate-500 mt-4 text-sm leading-relaxed">Sajian prasmanan elegan untuk berbagai acara dengan dekorasi cantik.</p>
                 </div>
 
                 <div class="service-card p-6 sm:p-8 rounded-3xl bg-slate-50 border border-slate-100 transition duration-300 group sm:col-span-2 lg:col-span-1">
