@@ -35,7 +35,8 @@ class OwnerController extends Controller
                                 $q->whereIn('status', ['confirmed', 'cooking', 'settlement', 'konfirmasi', 'lunas dp'])
                                   ->orWhere('payment_status', 'settlement');
                             })
-                            ->whereNotIn('status', ['done', 'selesai', 'Selesai', 'DONE'])
+                            // 🌟 PERBAIKAN: Cegah status pesanan selesai, batal, canceled, atau expired masuk ke jadwal belanja pasar Owner
+                            ->whereNotIn('status', ['done', 'selesai', 'Selesai', 'DONE', 'batal', 'canceled', 'expired'])
                             ->where('event_date', '>=', now()->subDays(1)->toDateString())
                             ->where('event_date', '<=', now()->addDays(7)->toDateString())
                             ->orderBy('event_date', 'asc')
