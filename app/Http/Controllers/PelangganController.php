@@ -206,7 +206,8 @@ class PelangganController extends Controller
         $notification = json_decode($payload);
         $order = Order::where('order_number', $notification->order_id)->first();
         if ($order) {
-            $status = in_array($notification->transaction_status, ['settlement', 'capture']) ? 'confirmed' : 'pending';
+            // Perubahan status disesuaikan menjadi 'lunas dp' atas persetujuan logika operasional katering
+            $status = in_array($notification->transaction_status, ['settlement', 'capture']) ? 'lunas dp' : 'pending';
             $order->update(['status' => $status, 'payment_status' => $notification->transaction_status]);
         }
         return response()->json(['message' => 'ok']);
