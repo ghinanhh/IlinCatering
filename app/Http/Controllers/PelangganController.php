@@ -160,7 +160,6 @@ class PelangganController extends Controller
 
     public function storeReview(Request $request)
     {
-        // 🌟 PERBAIKAN 1: Menambahkan validasi 'user_title'
         $request->validate([
             'order_id' => 'required', 
             'menu_id' => 'required', 
@@ -186,7 +185,6 @@ class PelangganController extends Controller
             $imagePath = 'storage/reviews/' . $filename;
         }
 
-        // 🌟 PERBAIKAN 2: Memasukkan data 'user_title' ke database
         Review::create([
             'user_id' => Auth::id(), 
             'order_id' => $request->order_id, 
@@ -206,11 +204,18 @@ class PelangganController extends Controller
         $notification = json_decode($payload);
         $order = Order::where('order_number', $notification->order_id)->first();
         if ($order) {
-            // Perubahan status disesuaikan menjadi 'lunas dp' atas persetujuan logika operasional katering
             $status = in_array($notification->transaction_status, ['settlement', 'capture']) ? 'lunas dp' : 'pending';
             $order->update(['status' => $status, 'payment_status' => $notification->transaction_status]);
         }
         return response()->json(['message' => 'ok']);
+    }
+
+    // FUNGSI BARU UNTUK UPDATE STATUS (TERMASUK BATAL)
+    public function updateStatus(Request $request, $id)
+    {
+        $order = Order::findOrFail($id);
+        $order->update(['status' => $request->status]);
+        return redirect()->back()->with('success', 'Status pesanan diupdate ke ' . $request->status);
     }
 
     public function adminReviewIndex()

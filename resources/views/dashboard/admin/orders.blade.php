@@ -100,6 +100,7 @@
                                         <option value="dimasak" {{ in_array(strtolower($order->status), ['dimasak', 'cooking']) ? 'selected' : '' }}>Dimasak</option>
                                         <option value="dikirim" {{ in_array(strtolower($order->status), ['dikirim', 'shipping']) ? 'selected' : '' }}>Dikirim</option>
                                         <option value="selesai" {{ in_array(strtolower($order->status), ['selesai', 'done']) ? 'selected' : '' }}>Selesai</option>
+                                        <option value="batal" {{ in_array(strtolower($order->status), ['batal', 'canceled']) ? 'selected' : '' }}>Batal</option>
                                     </select>
                                     <button type="submit" class="bg-slate-900 text-white w-full sm:w-auto px-4 py-1.5 rounded-xl hover:bg-orange-600 transition shadow-sm text-[10px] sm:text-xs font-bold">
                                         Update
