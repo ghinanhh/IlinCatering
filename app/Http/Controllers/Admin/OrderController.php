@@ -5,36 +5,30 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
-use App\Models\Menu; // 🌟 TAMBAHAN: Panggil model menu untuk dropdown pesanan manual
-use App\Models\OrderItem; // 🌟 TAMBAHAN: Panggil model order item untuk menyimpan rincian porsi offline
+use App\Models\Menu; 
+use App\Models\OrderItem; 
 use Illuminate\Http\Request;
-use Illuminate\Support\Str; // 🌟 TAMBAHAN: Untuk generate nomor nota otomatis
+use Illuminate\Support\Str; 
 use Google\Client;
 use Google\Service\Calendar;
 use Google\Service\Calendar\Event;
 
 class OrderController extends Controller
 {
-    // Menampilkan pesanan aktif saja yang masuk ke Admin (Selesai/Done otomatis disembunyikan)
     public function index()
     {
         $orders = Order::with(['user', 'items.menu'])
-            ->whereNotIn('status', ['selesai', 'done', 'Selesai', 'DONE']) // Filter agar pesanan selesai tidak menumpuk di sini
+            ->whereNotIn('status', ['selesai', 'done', 'Selesai', 'DONE']) 
             ->latest()
             ->get();
             
-        // 🌟 REVISI: Ambil semua daftar menu untuk pilihan dropdown di Form Pesanan Manual Admin
         $menus = Menu::orderBy('title', 'asc')->get();
             
         return view('dashboard.admin.orders', compact('orders', 'menus'));
     }
 
-    /**
-     * 🌟 FUNGSI BARU REVISI DOSEN: Menyimpan Pesanan Manual dari WA / Tatap Muka Langsung Lewat Admin
-     */
     public function storeManualOrder(Request $request)
     {
-        // 1. Validasi Input Super Ketat (Ditambahkan Validasi Dropdown Status Pembayaran Input)
         $request->validate([
             'recipient_name'       => 'required|string|min:3|max:255|regex:/^[a-zA-Z]/',
             'phone_number'         => 'required|numeric|min_digits:10',
@@ -44,7 +38,7 @@ class OrderController extends Controller
             'menu_ids'             => 'required|array|min:1',
             'quantities'           => 'required|array|min:1',
             'notes'                => 'nullable|array',
-            'payment_status_input' => 'required|in:belum_bayar,sudah_dp', // Proteksi pilihan verifikasi keuangan offline
+            'payment_status_input' => 'required|in:belum_bayar,sudah_dp', 
         ], [
             'recipient_name.min'   => 'Nama pelanggan offline terlalu pendek! Minimal 3 karakter.',
             'recipient_name.regex' => 'Nama wajib diawali dengan huruf.',
@@ -53,14 +47,13 @@ class OrderController extends Controller
             'menu_ids.required'    => 'Minimal pilih 1 menu masakan katering!',
         ]);
 
-        // 2. Hitung Total Harga Secara Otomatis Berdasarkan Pilihan Menu & Porsinya
         $totalPrice = 0;
         $itemsData = [];
 
         foreach ($request->menu_ids as $index => $menuId) {
             $menu = Menu::findOrFail($menuId);
             $qty = intval($request->quantities[$index] ?? 1);
-            if ($qty < 1) $qty = 1; // Proteksi agar porsi minimal 1
+            if ($qty < 1) $qty = 1; 
 
             $subtotal = $menu->price * $qty;
             $totalPrice += $subtotal;
@@ -73,11 +66,9 @@ class OrderController extends Controller
             ];
         }
 
-        // 3. Hitung Alur Pembagian Keuangan DP 30% dan Sisa COD 70%
         $dpAmount = $totalPrice * 0.3;
         $remainingPayment = $totalPrice * 0.7;
 
-        // 🌟 REVISI PENENTU KATUP LOGIKA DOSEN: Percabangan penentu keaslian uang kas katering masuk
         if ($request->payment_status_input === 'sudah_dp') {
             $dbOrderStatus   = 'lunas dp';
             $dbPaymentStatus = 'settlement';
@@ -88,29 +79,26 @@ class OrderController extends Controller
             $successMessage  = 'Pesanan manual (Offline) BERHASIL disimpan dengan status UTANG/PENDING DP! Dapur ditahan sampai dana diserahkan.';
         }
 
-        // 4. Buat Record Data Pesanan Baru ke Database (Menggunakan Nilai Dinamis Hasil Verifikasi)
         $order = Order::create([
-            'order_number'      => 'OFFLINE-' . strtoupper(Str::random(6)), // Generate Nota Unik Otomatis
-            'user_id'           => auth()->id(), // Dikaitkan ke akun Admin/Owner yang menginputkan data
+            'order_number'      => 'OFFLINE-' . strtoupper(Str::random(6)), 
+            'user_id'           => auth()->id(), 
             'recipient_name'    => $request->recipient_name,
             'phone_number'      => $request->phone_number,
             'address'           => $request->address,
             'event_date'        => $request->event_date,
             'event_time'        => $request->event_time,
             'total_price'       => $totalPrice,
-            'status'            => $dbOrderStatus,       // Mengikuti pilihan dropdown (lunas dp / pending)
+            'status'            => $dbOrderStatus,       
             'dp_amount'         => $dpAmount,
             'remaining_payment' => $remainingPayment,
-            'snap_token'        => null,                 // Jalur offline tidak menggunakan token Midtrans Online
-            'payment_status'    => $dbPaymentStatus,     // Mengikuti pilihan dropdown (settlement / pending)
+            'snap_token'        => null,                 
+            'payment_status'    => $dbPaymentStatus,     
         ]);
 
-        // 5. Simpan Seluruh Rincian Item Menu Masakan
         foreach ($itemsData as $item) {
             $order->items()->create($item);
         }
 
-        // 6. 🚀 KABEL OTOMATIS: Hanya kirimkan ke Google Calendar Dapur jika status pembayarannya sah sudah DP!
         if ($dbOrderStatus === 'lunas dp') {
             $this->addToGoogleCalendar($order);
         }
@@ -118,13 +106,10 @@ class OrderController extends Controller
         return redirect()->back()->with('success', $successMessage);
     }
 
-    /**
-     * Menampilkan Halaman Arsip Pesanan Selesai
-     */
     public function archive()
     {
         $archivedOrders = Order::with(['user', 'items.menu'])
-            ->whereIn('status', ['selesai', 'done', 'Selesai', 'DONE']) // Hanya mengambil pesanan yang sudah selesai
+            ->whereIn('status', ['selesai', 'done', 'Selesai', 'DONE']) 
             ->orderBy('event_date', 'desc') 
             ->orderBy('event_time', 'desc') 
             ->get();
@@ -132,13 +117,11 @@ class OrderController extends Controller
         return view('dashboard.admin.archive', compact('archivedOrders'));
     }
 
-    // Mengubah status pesanan (Misal: Pending -> Cooking)
     public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
         $order->update(['status' => $request->status]);
 
-        // 🚀 KABEL OTOMATIS: Jika status diubah jadi confirmed, cooking, lunas dp, atau konfirmasi, kirim ke Google Calendar!
         if (in_array($request->status, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak'])) {
             $this->addToGoogleCalendar($order);
         }
@@ -146,14 +129,10 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
 
-    /**
-     * Mencatat Pelunasan Sisa 70% secara COD saat Pengantaran
-     */
     public function completePayment($id)
     {
         $order = Order::findOrFail($id);
 
-        // Ubah sisa pembayaran jadi 0 (Lunas), status pesanan jadi 'done', dan status pembayaran settlement
         $order->update([
             'remaining_payment' => 0,
             'status'            => 'done', 
@@ -164,14 +143,17 @@ class OrderController extends Controller
     }
 
     /**
-     * 🍳 FUNGSI LOGIKA: Mengirim data jadwal masak ke Google Calendar Resmi Admin
+     * FUNGSI LOGIKA PERBAIKAN: Mengambil token digital secara aman dari database
      */
     private function addToGoogleCalendar($order)
     {
         try {
-            $admin = auth()->user(); // Ambil data admin yang sedang login
+            // Ambil data admin yang menyimpan token google calendar di database (Solusi Robot Webhook)
+            $admin = User::whereNotNull('google_calendar_token')
+                         ->where('google_calendar_token', '!=', 'null')
+                         ->first();
             
-            if (!$admin || !$admin->google_calendar_token || $admin->google_calendar_token === 'null') {
+            if (!$admin) {
                 return;
             }
 

@@ -7,11 +7,15 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Review;
+use App\Models\User; // 🌟 TAMBAHAN: Import Model User
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Google\Client; // 🌟 TAMBAHAN: Import Google Client
+use Google\Service\Calendar; // 🌟 TAMBAHAN: Import Google Calendar
+use Google\Service\Calendar\Event; // 🌟 TAMBAHAN: Import Google Event
 
 class PelangganController extends Controller
 {
@@ -206,16 +210,101 @@ class PelangganController extends Controller
         if ($order) {
             $status = in_array($notification->transaction_status, ['settlement', 'capture']) ? 'lunas dp' : 'pending';
             $order->update(['status' => $status, 'payment_status' => $notification->transaction_status]);
+
+            // 🚀 SAMBUNGAN KABEL: Jika berhasil lunas dp lewat Midtrans, kirim otomatis ke Google Calendar
+            if ($status === 'lunas dp') {
+                $this->addToGoogleCalendar($order);
+            }
         }
         return response()->json(['message' => 'ok']);
     }
 
-    // FUNGSI BARU UNTUK UPDATE STATUS (TERMASUK BATAL)
+    // FUNGSI BARU: Update Status via Admin di PelangganController
     public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
         $order->update(['status' => $request->status]);
+
+        // 🚀 SAMBUNGAN KABEL: Kirim ke Google Calendar jika status valid
+        if (in_array($request->status, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak'])) {
+            $this->addToGoogleCalendar($order);
+        }
+
         return redirect()->back()->with('success', 'Status pesanan diupdate ke ' . $request->status);
+    }
+
+    /**
+     * 🍳 KODINGAN AMAN GOOGLE CALENDAR UNTUK WEBHOOK MIDTRANS
+     */
+    private function addToGoogleCalendar($order)
+    {
+        try {
+            // Failsafe: Cari akun user manapun yang menyimpan token Google Calendar di database
+            $admin = User::whereNotNull('google_calendar_token')
+                         ->where('google_calendar_token', '!=', 'null')
+                         ->first();
+            
+            if (!$admin) return;
+
+            $token = json_decode($admin->google_calendar_token, true);
+            if (!is_array($token)) return;
+
+            $client = new Client();
+            $client->setClientId(config('services.google.client_id'));
+            $client->setClientSecret(config('services.google.client_secret'));
+            $client->setAccessToken($token);
+
+            if ($client->isAccessTokenExpired()) {
+                if ($client->getRefreshToken()) {
+                    $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                    $admin->google_calendar_token = json_encode($newToken);
+                    $admin->save();
+                    $client->setAccessToken($newToken);
+                } else {
+                    return;
+                }
+            }
+
+            $service = new Calendar($client);
+
+            $orderWithItems = Order::with('items.menu')->find($order->id);
+            $menuList = "";
+            foreach ($orderWithItems->items as $item) {
+                $menuList .= "- " . $item->menu->title . " (" . $item->quantity . "x)\n";
+            }
+
+            $startDateTime = $order->event_date . 'T' . $order->event_time; 
+            $endDateTime = date('Y-m-d\TH:i:s', strtotime($startDateTime . ' +2 hours'));
+
+            $buyerName = $order->recipient_name ?? ($order->user->name ?? 'Pelanggan Offline');
+
+            $event = new Event([
+                'summary' => '🍳 Jadwal Masak: Pesanan #' . ($order->order_number ?? $order->id) . ' - ' . $buyerName,
+                'location' => $order->address ?? 'Alamat Ilin Catering',
+                'description' => "Daftar Masakan yang Harus Disiapkan:\n" . $menuList . "\nCatatan Kontak: " . ($order->phone_number ?? '-'),
+                'start' => [
+                    'dateTime' => $startDateTime,
+                    'timeZone' => 'Asia/Makassar',
+                ],
+                'end' => [
+                    'dateTime' => $endDateTime,
+                    'timeZone' => 'Asia/Makassar',
+                ],
+                'reminders' => [
+                    'useDefault' => false,
+                    'overrides' => [
+                        ['method' => 'popup', 'minutes' => 4320], 
+                        ['method' => 'email', 'minutes' => 4320], 
+                        ['method' => 'popup', 'minutes' => 1440], 
+                    ],
+                ],
+            ]);
+
+            $service->events->insert('primary', $event);
+
+        } catch (\Exception $e) {
+            \Log::error('Gagal sinkronisasi Google Calendar: ' . $e->getMessage());
+        }
     }
 
     public function adminReviewIndex()

@@ -28,13 +28,13 @@ class AdminController extends Controller
         // 3. Ambil 5 Pesanan Terbaru untuk Tabel
         $recentOrders = Order::with('user')->latest()->take(5)->get();
 
-        // 4. Jadwal Masak Terdekat (DIPERBARUI: Pesanan Selesai Tidak Ditampilkan)
+        // 4. Jadwal Masak Terdekat (DIPERBARUI: Pesanan Selesai & Batal Tidak Ditampilkan)
         $upcomingSchedules = Order::where(function($q) {
                                 $q->whereIn('status', ['confirmed', 'cooking', 'settlement', 'konfirmasi', 'lunas dp'])
                                   ->orWhere('payment_status', 'settlement');
                             })
-                            // 🌟 REVISI UTAMA: Cegah status pesanan selesai masuk ke jadwal dapur
-                            ->whereNotIn('status', ['done', 'selesai', 'Selesai', 'DONE'])
+                            // 🌟 REVISI UTAMA: Cegah status pesanan selesai, batal, canceled, atau expired masuk ke jadwal dapur
+                            ->whereNotIn('status', ['done', 'selesai', 'Selesai', 'DONE', 'batal', 'canceled', 'expired'])
                             ->where('event_date', '>=', now()->subDays(1)->toDateString())
                             ->where('event_date', '<=', now()->addDays(7)->toDateString())
                             ->orderBy('event_date', 'asc')
