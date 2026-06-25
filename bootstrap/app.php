@@ -17,9 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleManager::class,
         ]);
         
-        // 2. Pengecualian CSRF Token untuk Midtrans (Tambahan Baru)
+        // 2. Pengecualian CSRF Token untuk Midtrans (Jalur VIP)
         $middleware->validateCsrfTokens(except: [
-            'midtrans/callback'
+            'midtrans/callback',
+            '*midtrans*'
         ]);
 
     })
