@@ -15,10 +15,14 @@ use Google\Service\Calendar\Event;
 
 class OrderController extends Controller
 {
+    /**
+     * Menampilkan PETA PESANAN AKTIF (Selesai & Batal otomatis disembunyikan)
+     */
     public function index()
     {
         $orders = Order::with(['user', 'items.menu'])
-            ->whereNotIn('status', ['selesai', 'done', 'Selesai', 'DONE']) 
+            // Sembunyikan status batal, canceled, dan expired agar tidak menumpuk
+            ->whereNotIn('status', ['selesai', 'done', 'Selesai', 'DONE', 'batal', 'canceled', 'expired']) 
             ->latest()
             ->get();
             
@@ -27,6 +31,9 @@ class OrderController extends Controller
         return view('dashboard.admin.orders', compact('orders', 'menus'));
     }
 
+    /**
+     * Menyimpan Pesanan Manual dari WA / Tatap Muka
+     */
     public function storeManualOrder(Request $request)
     {
         $request->validate([
@@ -106,10 +113,14 @@ class OrderController extends Controller
         return redirect()->back()->with('success', $successMessage);
     }
 
+    /**
+     * Menampilkan Halaman Arsip Pesanan (Urut Berdasarkan Tanggal Acara Terbaru Secara Flat)
+     */
     public function archive()
     {
         $archivedOrders = Order::with(['user', 'items.menu'])
-            ->whereIn('status', ['selesai', 'done', 'Selesai', 'DONE']) 
+            ->whereIn('status', ['selesai', 'done', 'Selesai', 'DONE', 'batal', 'canceled', 'expired']) 
+            // 🌟 Mengurutkan secara ketat dari tanggal acara katering paling baru (Juli, Juni, dst.)
             ->orderBy('event_date', 'desc') 
             ->orderBy('event_time', 'desc') 
             ->get();
@@ -143,25 +154,19 @@ class OrderController extends Controller
     }
 
     /**
-     * FUNGSI LOGIKA PERBAIKAN: Mengambil token digital secara aman dari database
+     * Sinkronisasi Google Calendar Digital
      */
     private function addToGoogleCalendar($order)
     {
         try {
-            // Ambil data admin yang menyimpan token google calendar di database (Solusi Robot Webhook)
             $admin = User::whereNotNull('google_calendar_token')
                          ->where('google_calendar_token', '!=', 'null')
                          ->first();
             
-            if (!$admin) {
-                return;
-            }
+            if (!$admin) return;
 
             $token = json_decode($admin->google_calendar_token, true);
-            
-            if (!is_array($token)) {
-                return;
-            }
+            if (!is_array($token)) return;
 
             $client = new Client();
             $client->setClientId(config('services.google.client_id'));
