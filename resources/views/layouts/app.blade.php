@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Ilin Catering</title>
     
+    {{-- 🌟 PENYEMPURNAAN: Menyisipkan token CSRF global di Head agar sesi lebih stabil --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
@@ -115,7 +118,7 @@
                     <span x-show="sidebarOpen" class="whitespace-nowrap">Laporan Penjualan</span>
                 </a>
 
-                {{-- 🌟 REVISI UTAMA DOSEN: Menyisipkan Gerbang Link Akses Arsip Penjualan Mutlak untuk Owner --}}
+                {{-- 🌟 GERBANG LINK ARSIP UNTUK OWNER --}}
                 <a href="{{ route('owner.orders.archive') }}" class="{{ request()->routeIs('owner.orders.archive') ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800' }} flex items-center gap-4 p-3 rounded-lg transition">
                     <i class="fa-solid fa-box-archive w-6 text-center"></i>
                     <span x-show="sidebarOpen" class="whitespace-nowrap">Arsip Pesanan</span>
