@@ -7,8 +7,8 @@
             
             <div class="hidden md:flex items-center space-x-4 lg:space-x-6 text-sm lg:text-base font-medium">
                 <a href="{{ url('/') }}" class="{{ request()->is('/') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600 transition">Beranda</a>
-                <a href="{{ url('/#kategori') }}" class="text-slate-700 hover:text-orange-600 transition">Kategori</a>
                 <a href="{{ route('tentang') }}" class="{{ request()->routeIs('tentang') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600 transition">Tentang Kami</a>
+                <a href="{{ url('/#kategori') }}" class="text-slate-700 hover:text-orange-600 transition">Kategori</a>
                 <a href="{{ route('cara_pemesanan') }}" class="{{ request()->routeIs('cara_pemesanan') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600 transition">Cara Pemesanan</a>
                 <a href="{{ route('reviews') }}" class="{{ request()->routeIs('reviews') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600 transition">Review</a>
                 <a href="{{ route('kontak') }}" class="{{ request()->routeIs('kontak') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600 transition">Kontak</a>
@@ -77,8 +77,8 @@
         class="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 p-4 space-y-4 shadow-xl z-[100]">
         
         <a href="{{ url('/') }}" class="block font-medium px-2 py-1 {{ request()->is('/') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600">Beranda</a>
-        <a href="{{ url('/#kategori') }}" class="block font-medium px-2 py-1 text-slate-700 hover:text-orange-600">Kategori</a>
         <a href="{{ route('tentang') }}" class="block font-medium px-2 py-1 {{ request()->routeIs('tentang') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600">Tentang Kami</a>
+        <a href="{{ url('/#kategori') }}" class="block font-medium px-2 py-1 text-slate-700 hover:text-orange-600">Kategori</a>
         <a href="{{ route('cara_pemesanan') }}" class="block font-medium px-2 py-1 {{ request()->routeIs('cara_pemesanan') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600">Cara Pemesanan</a>
         <a href="{{ route('reviews') }}" class="block font-medium px-2 py-1 {{ request()->routeIs('reviews') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600">Review</a>
         <a href="{{ route('kontak') }}" class="block font-medium px-2 py-1 {{ request()->routeIs('kontak') ? 'text-orange-600 font-bold' : 'text-slate-700' }} hover:text-orange-600">Kontak</a>

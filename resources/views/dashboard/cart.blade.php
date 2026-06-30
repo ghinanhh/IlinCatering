@@ -13,12 +13,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-2 space-y-4">
-            @php $totalTagihan = 0; @endphp
+            @php $totalTagihan = 0; $totalPorsi = 0; @endphp
 
             @forelse($cartItems as $item)
                 @php
                     $subtotal = $item->menu->price * $item->quantity;
                     $totalTagihan += $subtotal;
+                    $totalPorsi += $item->quantity;
                 @endphp
 
                 <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 space-y-4">
@@ -47,9 +48,12 @@
                                 </button>
                             @endif
 
-                            <span class="font-bold text-slate-800 w-4 text-center">
-                                {{ $item->quantity }}
-                            </span>
+                            {{-- 🌟 UPGRADE UTAMA: Mengubah teks biasa menjadi Input Box + Pengaman Tombol Enter --}}
+                            <input type="number" value="{{ $item->quantity }}" min="1"
+                                onkeydown="if(event.key === 'Enter') { event.preventDefault(); this.blur(); }"
+                                onchange="const f = document.getElementById('manual-form-{{ $item->id }}'); if(f) { f.querySelector('.manual-qty').value = this.value; f.submit(); }"
+                                class="w-12 text-center bg-white border border-slate-200 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-orange-500 focus:outline-none p-1 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                title="Masukkan jumlah porsi lalu klik di luar kotak atau tekan enter">
 
                             <button form="increase-form-{{ $item->id }}" type="submit" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-orange-600 transition text-xs font-bold outline-none cursor-pointer">
                                 +
@@ -77,7 +81,6 @@
     placeholder="Contoh: Request pedas manis...">{{ $item->notes }}</textarea>
                     </div>
                 </div>
-            {{-- 🌟 FIX DISINI: Kata @endforeach beralur typo yang bikin eror tadi sudah dihapus bersih --}}
             @empty
                 {{-- 🌟 REVISI EMPTY STATE: Tampilan kosong premium, padat, dan proporsional --}}
                 <div class="bg-white p-12 md:p-16 rounded-[2.5rem] shadow-sm border border-slate-100 text-center flex flex-col items-center justify-center min-h-[400px]">
@@ -186,10 +189,26 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold shadow-lg hover:bg-orange-700 transition flex items-center justify-center gap-3 mt-6 outline-none">
-                        Konfirmasi & Checkout
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
+                    {{-- 🌟 MODIFIKASI BLOK CHECKOUT: Validasi Minimal 10 Porsi Keseluruhan --}}
+                    @if($totalPorsi < 10)
+                        <div class="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-700 text-xs font-medium space-y-1 mt-4">
+                            <div class="flex items-center gap-2 font-bold text-red-800 text-sm">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Minimal Order Belum Tercapai</span>
+                            </div>
+                            <p>Total pesanan Anda baru <strong>{{ $totalPorsi }} porsi</strong>. Ilin Catering menerapkan batas minimal porsi sebanyak <strong>10 porsi</strong> untuk mengunci tanggal operasional dapur katering.</p>
+                        </div>
+
+                        <button type="button" class="w-full py-4 bg-slate-300 text-white rounded-2xl font-bold cursor-not-allowed flex items-center justify-center gap-3 mt-4 shadow-none" disabled>
+                            Konfirmasi & Checkout (Min. 10 Porsi)
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    @else
+                        <button type="submit" class="w-full py-4 bg-orange-600 text-white rounded-2xl font-bold shadow-lg hover:bg-orange-700 transition flex items-center justify-center gap-3 mt-6 outline-none">
+                            Konfirmasi & Checkout
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    @endif
                 @else
                     <button class="w-full py-4 bg-slate-300 text-white rounded-2xl font-bold cursor-not-allowed flex items-center justify-center gap-3 shadow-none" disabled>
                         Checkout Sekarang
@@ -219,6 +238,16 @@
     <form id="increase-form-{{ $item->id }}" action="{{ route('pelanggan.cart.updateQuantity', $item->id) }}" method="POST" class="hidden">
         @csrf
         <input type="hidden" name="action" value="increase">
+    </form>
+@endforeach
+
+{{-- 🌟 FORM RAHASIA BARU: UPDATE QUANTITY MANUALLY --}}
+@foreach($cartItems as $item)
+    <form id="manual-form-{{ $item->id }}" action="{{ route('pelanggan.cart.updateQuantity', $item->id) }}" method="POST" class="hidden">
+        @csrf
+        <input type="hidden" name="id" value="{{ $item->id }}">
+        <input type="hidden" name="action" value="manual">
+        <input type="hidden" name="qty" class="manual-qty" value="{{ $item->quantity }}">
     </form>
 @endforeach
 

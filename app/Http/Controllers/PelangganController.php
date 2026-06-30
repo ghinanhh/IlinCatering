@@ -70,13 +70,15 @@ class PelangganController extends Controller
                 $cart->increment('quantity');
             } elseif ($request->action === 'decrease') {
                 $cart->quantity > 1 ? $cart->decrement('quantity') : $cart->delete();
-            } elseif ($request->has('quantity')) {
-                $qty = (int) $request->quantity;
+            } elseif ($request->action === 'manual' || $request->has('qty') || $request->has('quantity')) {
+                // 🌟 FIX UPDATE QUANTITY: Menerima input ketikan manual (Enter/Blur) dari request 'qty'
+                $qtyInput = $request->input('qty') ?? $request->input('quantity');
+                $qty = (int) $qtyInput;
                 $qty > 0 ? $cart->update(['quantity' => $qty]) : $cart->delete();
             }
         }
         
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Jumlah pesanan berhasil diperbarui!');
     }
 
     public function removeItem($id)
@@ -96,7 +98,9 @@ class PelangganController extends Controller
     {
         $cartItems = Cart::with('menu')->where('user_id', Auth::id())->get();
         
+        // 🌟 REVISI DOSEN: Tanggal penuh tidak berlaku diblokir jika yang memesan adalah user yang sama
         $bookedDates = Order::whereNotIn('status', ['batal', 'canceled', 'expired'])
+            ->where('user_id', '!=', Auth::id())
             ->pluck('event_date')
             ->toArray();
 
@@ -110,8 +114,19 @@ class PelangganController extends Controller
             'event_date' => 'required', 'event_time' => 'required', 'cart_notes' => 'nullable|array'
         ]);
 
+        $cartItems = Cart::where('user_id', Auth::id())->get();
+        if ($cartItems->isEmpty()) return redirect()->back()->with('error', 'Keranjang kosong.');
+
+        // 🌟 AMANKAN BACK-END: Validasi total porsi wajib minimal 10 porsi sebelum simpan ke database
+        $totalPorsi = $cartItems->sum('quantity');
+        if ($totalPorsi < 10) {
+            return redirect()->back()->with('error', 'Mohon maaf, total pemesanan katering minimal wajib 10 porsi.');
+        }
+
+        // 🌟 REVISI DOSEN: Hitung kuota tanggal penuh hanya dari pesanan ORANG LAIN (User sama bisa tambah pesanan)
         $existingOrderCount = Order::where('event_date', $request->event_date)
             ->whereNotIn('status', ['batal', 'canceled', 'expired'])
+            ->where('user_id', '!=', Auth::id())
             ->count();
 
         if ($existingOrderCount >= 1) {
@@ -119,9 +134,6 @@ class PelangganController extends Controller
                 ->with('error', 'Maaf, kuota pemesanan untuk tanggal ' . date('d-m-Y', strtotime($request->event_date)) . ' sudah penuh (Ilin Catering menerapkan batas maksimal 1 pesanan besar per hari). Silakan pilih tanggal alternatif lain!')
                 ->withInput();
         }
-
-        $cartItems = Cart::where('user_id', Auth::id())->get();
-        if ($cartItems->isEmpty()) return redirect()->back()->with('error', 'Keranjang kosong.');
 
         $totalPrice = $cartItems->sum(fn($i) => $i->menu->price * $i->quantity);
         $order = Order::create([
