@@ -246,7 +246,7 @@ class PelangganController extends Controller
     }
 
     /**
-     * 🍳 KODINGAN AMAN GOOGLE CALENDAR UNTUK WEBHOOK MIDTRANS
+     * 🍳 KODINGAN AMAN GOOGLE CALENDAR UNTUK WEBHOOK MIDTRANS + ANTI DUPLIKAT
      */
     private function addToGoogleCalendar($order)
     {
@@ -279,6 +279,19 @@ class PelangganController extends Controller
 
             $service = new Calendar($client);
 
+            // 🌟 LOGIKA ANTI-DUPLIKAT: Cek apakah event dengan nomor order ini sudah ada di Google Calendar
+            $orderNumber = $order->order_number ?? $order->id;
+            $optParams = [
+                'q' => 'Pesanan #' . $orderNumber,
+                'maxResults' => 1,
+            ];
+            $existingEvents = $service->events->listEvents('primary', $optParams);
+            
+            // Jika sudah ada record event yang sama, batalkan pembuatan agar tidak double!
+            if (count($existingEvents->getItems()) > 0) {
+                return; 
+            }
+
             $orderWithItems = Order::with('items.menu')->find($order->id);
             $menuList = "";
             foreach ($orderWithItems->items as $item) {
@@ -291,7 +304,7 @@ class PelangganController extends Controller
             $buyerName = $order->recipient_name ?? ($order->user->name ?? 'Pelanggan Offline');
 
             $event = new Event([
-                'summary' => '🍳 Jadwal Masak: Pesanan #' . ($order->order_number ?? $order->id) . ' - ' . $buyerName,
+                'summary' => '🍳 Jadwal Masak: Pesanan #' . $orderNumber . ' - ' . $buyerName,
                 'location' => $order->address ?? 'Alamat Ilin Catering',
                 'description' => "Daftar Masakan yang Harus Disiapkan:\n" . $menuList . "\nCatatan Kontak: " . ($order->phone_number ?? '-'),
                 'start' => [
