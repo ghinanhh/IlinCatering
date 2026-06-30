@@ -111,7 +111,8 @@ class PelangganController extends Controller
     {
         $request->validate([
             'recipient_name' => 'required', 'phone_number' => 'required', 'address' => 'required',
-            'event_date' => 'required', 'event_time' => 'required', 'cart_notes' => 'nullable|array'
+            'event_date' => 'required', 'event_time' => 'required', 'cart_notes' => 'nullable|array',
+            'payment_option' => 'required|in:dp,lunas' // Validasi opsi input dari form depan
         ]);
 
         $cartItems = Cart::where('user_id', Auth::id())->get();
@@ -136,12 +137,22 @@ class PelangganController extends Controller
         }
 
         $totalPrice = $cartItems->sum(fn($i) => $i->menu->price * $i->quantity);
+
+        // 🌟 TAHAPAN BYPASS PERHITUNGAN: Menghitung pembagian nominal berdasarkan pilihan user
+        if ($request->payment_option === 'lunas') {
+            $dpAmount = $totalPrice;      // Wajib bayar di awal full 100%
+            $remainingPayment = 0;        // Sisa tagihan COD jadi nol
+        } else {
+            $dpAmount = $totalPrice * 0.3; // Skema DP Tradisional 30%
+            $remainingPayment = $totalPrice * 0.7;
+        }
+
         $order = Order::create([
             'user_id' => Auth::id(), 'order_number' => 'ILN-' . strtoupper(Str::random(8)),
             'recipient_name' => $request->recipient_name, 'phone_number' => $request->phone_number,
             'address' => $request->address, 'event_date' => $request->event_date,
             'event_time' => $request->event_time, 'total_price' => $totalPrice,
-            'dp_amount' => $totalPrice * 0.3, 'remaining_payment' => $totalPrice * 0.7,
+            'dp_amount' => $dpAmount, 'remaining_payment' => $remainingPayment,
             'status' => 'pending', 'payment_status' => 'pending',
         ]);
 
@@ -156,6 +167,7 @@ class PelangganController extends Controller
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         try {
+            // Gross amount dinamis mengikuti kolom dp_amount yang menampung kewajiban bayar sekarang
             $snapToken = Snap::getSnapToken(['transaction_details' => ['order_id' => $order->order_number, 'gross_amount' => (int) $order->dp_amount]]);
             $order->update(['snap_token' => $snapToken]);
         } catch (\Exception $e) { \Log::error($e->getMessage()); }
@@ -220,25 +232,26 @@ class PelangganController extends Controller
         $notification = json_decode($payload);
         $order = Order::where('order_number', $notification->order_id)->first();
         if ($order) {
-            $status = in_array($notification->transaction_status, ['settlement', 'capture']) ? 'lunas dp' : 'pending';
+            $isPaid = in_array($notification->transaction_status, ['settlement', 'capture']);
+            // Status diset dinamis: kalau lunas total (sisa 0) statusnya 'lunas', kalau bayar cicilan statusnya 'lunas dp'
+            $status = $isPaid ? ($order->remaining_payment == 0 ? 'lunas' : 'lunas dp') : 'pending';
             $order->update(['status' => $status, 'payment_status' => $notification->transaction_status]);
 
-            // 🚀 SAMBUNGAN KABEL: Jika berhasil lunas dp lewat Midtrans, kirim otomatis ke Google Calendar
-            if ($status === 'lunas dp') {
+            // 🚀 SAMBUNGAN KABEL: Jika berhasil dibayar aman lewat Midtrans, kirim otomatis ke Google Calendar
+            if ($isPaid) {
                 $this->addToGoogleCalendar($order);
             }
         }
         return response()->json(['message' => 'ok']);
     }
 
-    // FUNGSI BARU: Update Status via Admin di PelangganController
     public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
         $order->update(['status' => $request->status]);
 
-        // 🚀 SAMBUNGAN KABEL: Kirim ke Google Calendar jika status valid
-        if (in_array($request->status, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak'])) {
+        // 🚀 SAMBUNGAN KABEL: Kirim ke Google Calendar jika status valid (Ditambahkan 'lunas' agar tetap sinkron)
+        if (in_array($request->status, ['confirmed', 'cooking', 'lunas dp', 'lunas', 'konfirmasi', 'dimasak'])) {
             $this->addToGoogleCalendar($order);
         }
 

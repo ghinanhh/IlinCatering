@@ -6,8 +6,8 @@
     <p class="text-slate-500">Tinjau pesananmu sebelum lanjut ke pembayaran.</p>
 </div>
 
-{{-- 🌟 MAIN FORM CHECKOUT --}}
-<form action="{{ route('pelanggan.checkout.process') }}" method="POST">
+{{-- 🌟 MAIN FORM CHECKOUT (Ditambahkan x-data AlpineJS untuk pilihan metode pembayaran) --}}
+<form action="{{ route('pelanggan.checkout.process') }}" method="POST" x-data="{ paymentMethod: 'dp' }">
     @csrf
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -131,18 +131,32 @@
                     </div>
                 </div>
 
-                <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100">
-                    <div class="flex items-center gap-3 text-orange-700 font-bold mb-1">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span>Ketentuan DP 30%</span>
+                {{-- 🌟 BYPASS DUA METODE PEMBAYARAN: Radio Button Premium Berbasis AlpineJS --}}
+                <div class="bg-orange-50 p-5 rounded-2xl border border-orange-100 space-y-3">
+                    <div class="flex items-center gap-2 text-orange-700 font-bold text-sm">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Pilih Opsi Pembayaran</span>
                     </div>
-                    <p class="text-xs text-orange-600/80 leading-relaxed">
-                        Bayar DP 30% untuk konfirmasi pesanan.
-                    </p>
-                    <div class="mt-3 flex justify-between items-center bg-white p-3 rounded-xl shadow-sm">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Wajib Bayar:</span>
-                        <span class="font-black text-slate-900">
+                    
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <label class="flex items-center justify-center gap-2 p-3 bg-white border rounded-xl cursor-pointer transition select-none" :class="paymentMethod === 'dp' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-slate-200'">
+                            <input type="radio" name="payment_option" value="dp" x-model="paymentMethod" class="text-orange-600 focus:ring-orange-500" checked>
+                            <span class="text-xs font-bold text-slate-700">Bayar DP 30%</span>
+                        </label>
+                        
+                        <label class="flex items-center justify-center gap-2 p-3 bg-white border rounded-xl cursor-pointer transition select-none" :class="paymentMethod === 'lunas' ? 'border-orange-500 ring-2 ring-orange-200' : 'border-slate-200'">
+                            <input type="radio" name="payment_option" value="lunas" x-model="paymentMethod" class="text-orange-600 focus:ring-orange-500">
+                            <span class="text-xs font-bold text-slate-700">Bayar Lunas</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-3 flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-orange-100">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Wajib Bayar Sekarang:</span>
+                        <span class="font-black text-slate-900 text-sm" x-show="paymentMethod === 'dp'">
                             Rp {{ number_format($totalTagihan * 0.3, 0, ',', '.') }}
+                        </span>
+                        <span class="font-black text-slate-900 text-sm" x-show="paymentMethod === 'lunas'">
+                            Rp {{ number_format($totalTagihan, 0, ',', '.') }}
                         </span>
                     </div>
                 </div>
