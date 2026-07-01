@@ -97,14 +97,12 @@ class PelangganController extends Controller
     {
         $cartItems = Cart::with('menu')->where('user_id', Auth::id())->get();
         
-        // 1. Ambil tanggal penuh dari database lokal (kecuali milik user yang sedang login)
         $bookedDates = Order::whereNotIn('status', ['batal', 'canceled', 'expired'])
             ->where('user_id', '!=', Auth::id())
             ->pluck('event_date')
             ->map(fn($date) => date('Y-m-d', strtotime($date)))
             ->toArray();
 
-        // 2. SINKRONISASI AMAN: Ambil langsung dari Google Calendar Admin di Background
         try {
             $admin = User::whereNotNull('google_calendar_token')
                          ->where('google_calendar_token', '!=', 'null')
@@ -243,7 +241,7 @@ class PelangganController extends Controller
 
             $imageSource = imagecreatefromstring(file_get_contents($request->file('image')));
             imagejpeg($imageSource, $destinationPath . '/' . $filename, 60);
-            imagedestroy($imageSource); // 🌟 FIX: Sudah kembali menggunakan fungsi destroy bawaan GD PHP
+            imagedestroy($imageSource); 
 
             $imagePath = 'storage/reviews/' . $filename;
         }
@@ -301,7 +299,7 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Status pesanan diupdate ke ' . $request->status);
     }
 
-    public function kurirValidasiCod($order_number)
+    public function showKurirValidasi($order_number)
     {
         $order = Order::where('order_number', $order_number)->firstOrFail();
         
@@ -309,12 +307,37 @@ class PelangganController extends Controller
             return "
                 <div style='text-align: center; font-family: sans-serif; padding: 50px;'>
                     <h1 style='color: #10b981;'>🍱 Ilin Catering</h1>
-                    <p style='color: #64748b;'>Pesanan <strong>{$order_number}</strong> sudah pernah divalidasi sebelumnya.</p>
-                    <p style='font-size: 12px; color: #94a3b8;'>Made with ♡ by Ghina</p>
+                    <p style='color: #64748b;'>Pesanan <strong>{$order_number}</strong> sudah selesai divalidasi sebelumnya.</p>
                 </div>
             ";
         }
 
+        return "
+            <div style='text-align: center; font-family: sans-serif; padding: 40px 20px; background: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center;'>
+                <div style='background: white; max-width: 400px; width: 100%; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;'>
+                    <h2 style='color: #0f172a; margin-bottom: 5px; font-weight: 800;'>Konfirmasi Hantaran</h2>
+                    <p style='color: #64748b; font-size: 13px; margin-bottom: 25px;'>Ilin Catering Lapangan</p>
+                    <div style='background: #f1f5f9; padding: 15px; border-radius: 16px; text-align: left; margin-bottom: 25px;'>
+                        <p style='margin: 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;'>No. Pesanan</p>
+                        <p style='margin: 3px 0 10px 0; font-size: 16px; font-weight: bold; color: #0f172a;'>#{$order_number}</p>
+                        <p style='margin: 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;'>Penerima</p>
+                        <p style='margin: 3px 0 0 0; font-size: 14px; font-weight: bold; color: #334155;'>{$order->recipient_name}</p>
+                    </div>
+                    <form action='".route('kurir.validasi.submit', $order_number)."' method='POST'>
+                        <input type='hidden' name='_token' value='".csrf_token()."'>
+                        <button type='submit' style='background: #16a34a; color: white; border: none; width: 100%; padding: 15px; border-radius: 16px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.2); outline: none;'>
+                            ✅ YA, PESANAN SAMPAI & COD LUNAS
+                        </button>
+                    </form>
+                </div>
+            </div>
+        ";
+    }
+
+    public function kurirValidasiCod($order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+        
         $order->update([
             'status' => 'selesai',
             'payment_status' => 'settlement',
@@ -412,6 +435,7 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Balasan dikirim!');
     }
 
+    // 🌟 FIX: Kurung siku nakal di line 447 sudah diubah menjadi tanda kurung lingkaran biasa )
     public function cetakNota($id)
     {
         $order = Order::with('items.menu')->where('user_id', Auth::id())->where('id', $id)->firstOrFail();
