@@ -213,3 +213,9 @@ Route::post('/midtrans/callback', [PelangganController::class, 'handleNotificati
 // 🚀 DITERUSKAN KE KURIR CONTROLLER UNTUK PROSES UPLOAD KAMERA FOTO BUKTI LAPANGAN
 Route::get('/validasi-kurir/{order_number}', [KurirController::class, 'halamanValidasi'])->name('kurir.validasi');
 Route::post('/validasi-kurir/{order_number}/konfirmasi', [KurirController::class, 'prosesValidasi'])->name('kurir.validasi.proses');
+
+// 🌟 RUTE DARURAT: Memperbaiki dan meregenerasi jembatan folder symlink storage langsung di server hosting Linux
+Route::get('/generate-symlink-ilin', function () {
+    \Illuminate\Support\Facades\Artisan::call('storage:link');
+    return 'Selamat Ghina, jembatan folder storage berhasil diperbaiki di hosting Linux! 🎉';
+});
