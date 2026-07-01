@@ -27,15 +27,16 @@ class KurirController extends Controller
 
         // Validasi file gambar yang di-upload lewat kamera HP kurir
         $request->validate([
-            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Batasi maksimal ukuran file 2MB
+            // 🌟 FIX: Ukuran dinaikkan menjadi max:10240 (10MB) agar muat foto resolusi tinggi HP Kurir
+            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg|max:10240', 
         ], [
             'bukti_foto.required' => 'Wajib mengambil foto bukti hantaran langsung dari kamera HP!',
             'bukti_foto.image'    => 'File wajib berupa gambar atau foto yang valid.',
             'bukti_foto.mimes'    => 'Format foto hantaran harus berupa jpeg, png, atau jpg.',
-            'bukti_foto.max'      => 'Ukuran foto terlalu besar! Maksimal berukuran 2MB.',
+            'bukti_foto.max'      => 'Ukuran foto terlalu besar! Kamera HP Anda menghasilkan file di atas 10MB. Mohon gunakan foto dengan resolusi lebih rendah.',
         ]);
 
-        // 🌟 FIX UTAMA: Satukan seluruh data pembaruan finansial & status ke dalam satu array
+        // Satukan seluruh data pembaruan finansial & status ke dalam satu array
         $updateData = [
             'remaining_payment' => 0,
             'status'            => 'done', // Otomatis pesanan selesai (sesuaikan 'done' atau 'selesai' pada DB-mu)
