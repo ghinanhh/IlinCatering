@@ -22,6 +22,15 @@
         <div class="max-w-7xl mx-auto">
             <h1 class="text-3xl sm:text-4xl font-extrabold mb-10 sm:mb-12 text-center">Hubungi <span class="text-orange-600">Kami</span></h1>
             
+            {{-- 🌟 REVISI BU TAMI: Kotak Disclaimer Penutup Celah Pemesanan Manual (Bypass Loophole) --}}
+            <div class="p-5 bg-amber-50 border border-amber-200 text-amber-900 rounded-[1.5rem] mb-8 text-xs font-semibold flex items-start gap-3.5 max-w-6xl mx-auto shadow-xs">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl shrink-0 mt-0.5"></i>
+                <div>
+                    <strong class="block text-amber-950 font-extrabold text-sm mb-1 uppercase tracking-wide">Pemberitahuan Penting Sistem:</strong>
+                    Ilin Catering <span class="text-red-600 font-bold underline">TIDAK MELAYANI</span> sistem pemesanan langsung melalui WhatsApp Chat. Semua transaksi wajib diproses secara mandiri oleh pelanggan melalui menu keranjang website guna memvalidasi batasan minimal 10 porsi, pengecekan kuota tanggal acara, serta otomasi jadwal masak ke Google Calendar Admin. Kontak di bawah ini murni ditujukan sebagai pusat bantuan tanya-jawab informasi.
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto items-stretch">
                 
                 {{-- SISI KIRI: INFORMASI KONTAK CARD --}}
@@ -30,10 +39,14 @@
                         <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6">
                             <i class="fa-brands fa-whatsapp"></i>
                         </div>
-                        <h3 class="font-bold text-xl sm:text-2xl mb-2">WhatsApp</h3>
-                        <p class="text-slate-500 mb-6 text-sm sm:text-base">Konsultasi menu dan pemesanan lebih cepat via chat.</p>
-                        <a href="https://wa.me/62887435414960" target="_blank" class="inline-block w-full sm:w-auto bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition">
-                            Chat Admin
+                        <h3 class="font-bold text-xl sm:text-2xl mb-2">WhatsApp Helpdesk</h3>
+                        
+                        {{-- 🌟 REVISI: Mengubah deskripsi subteks dari kata 'pemesanan' menjadi murni layanan bantuan informasi --}}
+                        <p class="text-slate-500 mb-6 text-sm sm:text-base">Layanan pusat bantuan, tanya-jawab informasi hidangan, dan konsultasi menu katering.</p>
+                        
+                        {{-- 🌟 REVISI: Mengubah isi template teks otomatis kirim pesan agar tujuannya murni bertanya, bukan memesan manual --}}
+                        <a href="https://wa.me/62887435414960?text=Halo%20Admin%20Ilin%20Catering,%20saya%20ingin%20bertanya%20mengenai%20informasi%20detail%20menu%20dan%20layanan%20bantuan%20konsumen..." target="_blank" class="inline-block w-full sm:w-auto bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition">
+                            Chat Layanan Bantuan
                         </a>
                     </div>
                     
@@ -57,7 +70,7 @@
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1087.2512093340072!2d114.70634318436711!3d-3.600938682094021!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2de6917a64c81573%3A0x586bf6a27aeba0d8!2silin%20catering!5e0!3m2!1sid!2sid!4v1779974666890!5m2!1sid!2sid" 
                         allowfullscreen="" 
                         loading="lazy" 
-                        referrerpolicy="no-referrer-when-downgrade">
+                        referencedpolicy="no-referrer-when-downgrade">
                     </iframe>
                 </div>
                 

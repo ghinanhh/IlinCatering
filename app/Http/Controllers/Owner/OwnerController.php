@@ -85,6 +85,50 @@ class OwnerController extends Controller
                             ->get();
         }
 
+        // 🚀 SINKRONISASI JADWAL GOOGLE CALENDAR UNTUK DASHBOARD OWNER
+        $googleDates = [];
+        try {
+            // Cari user mana saja (admin) yang memegang token integrasi kalender utama katering
+            $calendarUser = User::whereNotNull('google_calendar_token')
+                                ->where('google_calendar_token', '!=', 'null')
+                                ->first();
+            
+            if ($calendarUser) {
+                $token = json_decode($calendarUser->google_calendar_token, true);
+                if (is_array($token)) {
+                    $client = new \Google\Client();
+                    $client->setClientId(config('services.google.client_id'));
+                    $client->setClientSecret(config('services.google.client_secret'));
+                    $client->setAccessToken($token);
+
+                    if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+                        $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                        $calendarUser->google_calendar_token = json_encode($newToken);
+                        $calendarUser->save();
+                        $client->setAccessToken($newToken);
+                    }
+
+                    $service = new \Google\Service\Calendar($client);
+                    $optParams = [
+                        'timeMin' => date('c', strtotime('-1 month')),
+                        'timeMax' => date('c', strtotime('+3 months')),
+                        'singleEvents' => true,
+                    ];
+                    $events = $service->events->listEvents('primary', $optParams);
+
+                    foreach ($events->getItems() as $event) {
+                        $start = $event->getStart();
+                        $dateStr = $start->getDateTime() ?? $start->getDate();
+                        if ($dateStr) {
+                            $googleDates[] = date('Y-m-d', strtotime($dateStr));
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Gagal sinkronisasi Google Calendar di Dashboard Owner: ' . $e->getMessage());
+        }
+
         return view('dashboard.owner.index', compact(
             'totalOmzet', 
             'omzetBulanIni', 
@@ -95,7 +139,8 @@ class OwnerController extends Controller
             'recentReviews',
             'tahunIni',
             'availableYears',
-            'upcomingSchedules' // Variabel jadwal belanja dikirim ke view owner
+            'upcomingSchedules',
+            'googleDates' // 🌟 Dikirim dengan aman ke view owner tanpa mengubah fungsi bawaan lainnya
         ));
     }
 

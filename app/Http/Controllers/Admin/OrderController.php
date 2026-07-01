@@ -38,7 +38,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'recipient_name'       => 'required|string|min:3|max:255|regex:/^[a-zA-Z]/',
-            'phone_number'         => 'required|numeric|min_digits:10',
+            'phone_number'         => 'required|string|min_digits:10',
             'address'              => 'required|string',
             'event_date'           => 'required|date|after_or_equal:today',
             'event_time'           => 'required',
@@ -186,6 +186,14 @@ class OrderController extends Controller
 
             $service = new Calendar($client);
 
+            // 🌟 PROTEKSI DUPLIKASI: Cek nomor pesanan sebelum melakukan insert event baru
+            $orderNumber = $order->order_number ?? $order->id;
+            $optParams = ['q' => 'Pesanan #' . $orderNumber, 'maxResults' => 1];
+            $existingEvents = $service->events->listEvents('primary', $optParams);
+            if (count($existingEvents->getItems()) > 0) { 
+                return; // Jika jadwal pesanan ini sudah terdaftar di Google Calendar, stop proses biar tidak ganda
+            }
+
             $orderWithItems = Order::with('items.menu')->find($order->id);
             $menuList = "";
             foreach ($orderWithItems->items as $item) {
@@ -198,7 +206,7 @@ class OrderController extends Controller
             $buyerName = $order->recipient_name ?? ($order->user->name ?? 'Pelanggan Offline');
 
             $event = new Event([
-                'summary' => '🍳 Jadwal Masak: Pesanan #' . ($order->order_number ?? $order->id) . ' - ' . $buyerName,
+                'summary' => '🍳 Jadwal Masak: Pesanan #' . $orderNumber . ' - ' . $buyerName,
                 'location' => $order->address ?? 'Alamat Ilin Catering',
                 'description' => "Daftar Masakan yang Harus Disiapkan:\n" . $menuList . "\nCatatan Kontak: " . ($order->phone_number ?? '-'),
                 'start' => [

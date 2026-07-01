@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- 🌟 CDN KALENDER FLATPICKR UTAMA --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <div class="mb-6 sm:mb-8 text-center sm:text-left">
     <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Dashboard Owner 👑</h1>
     <p class="text-sm sm:text-base text-slate-500 mt-1 sm:mt-0">Pantau pertumbuhan bisnis Ilin Catering Anda.</p>
@@ -33,71 +37,92 @@
     </div>
 </div>
 
-{{-- 🌟 REVISI RAMPING: Komponen Jadwal Belanja Diperkecil & Berjejer ke Samping (Grid Layout) 🌟 --}}
-<div class="bg-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-xl mb-8 sm:mb-10">
-    <div class="mb-4">
-        <h3 class="font-black text-sm sm:text-base text-white flex items-center gap-2">
-            <i class="fa-solid fa-basket-shopping text-orange-500"></i>
-            Jadwal Masak & Manajemen Belanja Pasar 🛒
-        </h3>
-        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">Pantau rincian porsi H-1 s.d H-7 untuk ketepatan pasokan bahan baku katering.</p>
-    </div>
+{{-- 🌟 UPGRADE GRID LAYOUT: Menyandingkan Operasional Belanja Pasar dengan Kalender Pemantau Kuota Bulanan Owner 🌟 --}}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 sm:mb-10">
+    
+    {{-- SISI KIRI (KOLOM 1 & 2): MANAJEMEN OPERASIONAL BELANJA --}}
+    <div class="lg:col-span-2 bg-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-xl flex flex-col justify-between">
+        <div>
+            <div class="mb-4">
+                <h3 class="font-black text-sm sm:text-base text-white flex items-center gap-2">
+                    <i class="fa-solid fa-basket-shopping text-orange-500"></i>
+                    Jadwal Masak & Manajemen Belanja Pasar 🛒
+                </h3>
+                <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">Pantau rincian porsi H-1 s.d H-7 untuk ketepatan pasokan bahan baku katering.</p>
+            </div>
 
-    {{-- Mengubah pembungkus menjadi grid 2 kolom di tablet dan 3 kolom di layar laptop --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        @foreach($upcomingSchedules as $schedule)
-            @php
-                $tanggalAcara = \Carbon\Carbon::parse($schedule->event_date)->startOfDay();
-                $hariIni = \Carbon\Carbon::now()->startOfDay();
-                $sisaHari = $hariIni->diffInDays($tanggalAcara, false);
-                $isMendekati = ($sisaHari >= 1 && $sisaHari <= 3);
-            @endphp
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                @foreach($upcomingSchedules as $schedule)
+                    @php
+                        $tanggalAcara = \Carbon\Carbon::parse($schedule->event_date)->startOfDay();
+                        $hariIni = \Carbon\Carbon::now()->startOfDay();
+                        $sisaHari = $hariIni->diffInDays($tanggalAcara, false);
+                        $isMendekati = ($sisaHari >= 1 && $sisaHari <= 3);
+                    @endphp
 
-            <div class="border-l-4 {{ $isMendekati ? 'border-orange-500 bg-orange-500/10' : 'border-slate-700 bg-white/5' }} p-3.5 rounded-r-xl relative overflow-hidden flex flex-col justify-between transition-all">
-                <div>
-                    <div class="flex justify-between items-start gap-2">
+                    <div class="border-l-4 {{ $isMendekati ? 'border-orange-500 bg-orange-500/10' : 'border-slate-700 bg-white/5' }} p-3.5 rounded-r-xl relative overflow-hidden flex flex-col justify-between transition-all">
                         <div>
-                            <p class="text-[10px] {{ $isMendekati ? 'text-orange-400' : 'text-slate-400' }} font-bold uppercase tracking-wider">
-                                {{ \Carbon\Carbon::parse($schedule->event_date)->locale('id')->isoFormat('dddd, D MMM YYYY') }}
-                            </p>
-                            <p class="font-bold text-xs sm:text-sm text-white mt-0.5">
-                                ⏰ {{ \Carbon\Carbon::parse($schedule->event_time)->format('H:i') }} WITA
-                            </p>
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <p class="text-[10px] {{ $isMendekati ? 'text-orange-400' : 'text-slate-400' }} font-bold uppercase tracking-wider">
+                                        {{ \Carbon\Carbon::parse($schedule->event_date)->locale('id')->isoFormat('dddd, D MMM YYYY') }}
+                                    </p>
+                                    <p class="font-bold text-xs sm:text-sm text-white mt-0.5">
+                                        ⏰ {{ \Carbon\Carbon::parse($schedule->event_time)->format('H:i') }} WITA
+                                    </p>
+                                </div>
+                                @if($isMendekati)
+                                    <span class="bg-orange-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-wider shrink-0 animate-pulse">
+                                        H-{{ $sisaHari }} BELANJA
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="mt-3 bg-black/20 border border-white/5 p-2 rounded-lg">
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Menu Hidangan:</p>
+                                <ul class="space-y-0.5 text-[11px] text-slate-200">
+                                    @foreach($schedule->items as $item)
+                                        <li class="flex justify-between border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
+                                            <span class="truncate pr-2">• {{ $item->menu->title }}</span>
+                                            <span class="font-bold text-orange-400 shrink-0">{{ $item->quantity }} Porsi</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
-                        @if($isMendekati)
-                            <span class="bg-orange-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-wider shrink-0 animate-pulse">
-                                H-{{ $sisaHari }} BELANJA
-                            </span>
-                        @endif
+
+                        <p class="text-[9px] text-slate-500 italic mt-3 pt-2 border-t border-white/5">
+                            #{{ $schedule->order_number }} - {{ $schedule->recipient_name }}
+                        </p>
                     </div>
+                @endforeach
 
-                    {{-- Box Menu Diperkecil Porsinya --}}
-                    <div class="mt-3 bg-black/20 border border-white/5 p-2 rounded-lg">
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1">Menu Hidangan:</p>
-                        <ul class="space-y-0.5 text-[11px] text-slate-200">
-                            @foreach($schedule->items as $item)
-                                <li class="flex justify-between border-b border-white/5 pb-0.5 last:border-0 last:pb-0">
-                                    <span class="truncate pr-2">• {{ $item->menu->title }}</span>
-                                    <span class="font-bold text-orange-400 shrink-0">{{ $item->quantity }} Porsi</span>
-                                </li>
-                            @endforeach
-                        </ul>
+                @if($upcomingSchedules->isEmpty())
+                    <div class="col-span-full text-center py-6 border border-dashed border-slate-700 rounded-2xl">
+                        <i class="fa-solid fa-calendar-xmark text-slate-600 text-xl mb-1 block"></i>
+                        <p class="text-slate-500 italic text-xs">Belum ada jadwal masak terdekat. Operasional belanja pasar sedang santai.</p>
                     </div>
-                </div>
-
-                <p class="text-[9px] text-slate-500 italic mt-3 pt-2 border-t border-white/5">
-                    #{{ $schedule->order_number }} - {{ $schedule->recipient_name }}
-                </p>
+                @endif
             </div>
-        @endforeach
-
-        @if($upcomingSchedules->isEmpty())
-            <div class="col-span-full text-center py-6 border border-dashed border-slate-700 rounded-2xl">
-                <i class="fa-solid fa-calendar-xmark text-slate-600 text-xl mb-1 block"></i>
-                <p class="text-slate-500 italic text-xs">Belum ada jadwal masak terdekat. Operasional belanja pasar sedang santai.</p>
-            </div>
-        @endif
+        </div>
     </div>
+
+    {{-- SISI KANAN (KOLOM 3): VISUALISASI KALENDER BULANAN UTAMA OWNER --}}
+    <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div>
+            <h3 class="font-black text-slate-900 text-sm sm:text-base mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-calendar text-orange-600"></i>
+                Kalender Pemantau Kuota
+            </h3>
+            <div class="w-full overflow-x-auto bg-slate-50 p-3 rounded-2xl border border-slate-200 flex flex-col items-center">
+                <input type="text" id="owner_dashboard_calendar" class="hidden">
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-orange-700 px-1">
+                <span class="w-2.5 h-2.5 bg-orange-100 border border-orange-300 rounded-md inline-block"></span> Tanggal Terisi Pesanan / Google Agenda
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {{-- Baris Analisis Grafik / Tabel Pendapatan --}}
@@ -206,7 +231,8 @@
             </h3>
         </div>
         
-        <div class="space-y-4">
+        {{-- 🌟 FIX UTAMA: Menambahkan 'max-h-[440px] overflow-y-auto pr-2 custom-scrollbar' agar ulasan tidak melorot ke bawah --}}
+        <div class="space-y-4 max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
             @forelse($recentReviews ?? [] as $review)
             <div class="p-4 sm:p-5 bg-slate-50 rounded-2xl sm:rounded-3xl border border-slate-100 transition hover:bg-white hover:shadow-md group">
                 <div class="flex flex-col sm:flex-row justify-between items-start mb-2 gap-2 sm:gap-0">
@@ -264,13 +290,38 @@
 </div>
 
 <style>
-    .animate-fade-in {
-        animation: fadeIn 0.3s ease-in-out;
-    }
+    /* KUSTOM SCROLLBAR BAGIAN REVIEW */
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* KUSTOM GRAPH ANIMASI & CSS KALENDER */
+    .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
     }
+
+    .flatpickr-calendar {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 308px !important;
+        min-width: 308px !important;
+    }
+    .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 800 !important;
+        color: #0f172a !important;
+    }
+    .flatpickr-day.admin-has-order {
+        background: #ffedd5 !important;
+        color: #ea580c !important;
+        border-radius: 12px !important;
+        font-weight: 900 !important;
+        border: 1px solid #fed7aa !important;
+    }
+    .flatpickr-day.admin-has-order:hover { background: #fed7aa !important; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -301,6 +352,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // 1. CHART BATANG OMZET PENJUALAN OWNER
         const ctx = document.getElementById('grafikPenjualanBatang').getContext('2d');
         const labelBulan = @json($grafikBulan);
         const dataPendapatan = @json($grafikPendapatan);
@@ -354,6 +406,26 @@
                             color: '#64748b'
                         }
                     }
+                }
+            }
+        });
+
+        // 2. INITIALISASI SINKRONISASI KALENDER FLATPICKR OWNER
+        const localDates = @json(collect($upcomingSchedules)->pluck('event_date')->map(fn($d) => date('Y-m-d', strtotime($d)))->toArray());
+        const googleDates = @json($googleDates ?? []);
+        const orderDates = [...new Set([...localDates, ...googleDates])];
+
+        flatpickr("#owner_dashboard_calendar", {
+            inline: true,
+            dateFormat: "Y-m-d",
+            locale: { firstDayOfWeek: 1 },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const localDateStr = dayElem.dateObj.getFullYear() + '-' +
+                    String(dayElem.dateObj.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(dayElem.dateObj.getDate()).padStart(2, '0');
+
+                if (orderDates.includes(localDateStr)) {
+                    dayElem.classList.add("admin-has-order");
                 }
             }
         });

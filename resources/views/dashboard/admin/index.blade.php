@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- 🌟 CDN KALENDER FLATPICKR UNTUK VISUALISASI DASHBOARD ADMIN --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <div class="p-6 bg-slate-50 min-h-screen">
 
     <div class="mb-8">
@@ -83,28 +87,30 @@
             <div class="w-10 h-10 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-3 text-base">
                 <i class="fa-solid fa-wallet"></i>
             </div>
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Target DP (30%)</p>
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Target DP (30%)\</p>
             <p class="text-xl font-black mt-1 text-green-600 truncate">Rp {{ number_format($totalRevenue * 0.3, 0, ',', '.') }}</p>
         </div>
     </div>
 
-    {{-- Main Row Tengah --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+    {{-- Main Row Tengah (3 Kolom Sejajar) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        
+        {{-- KOLOM 1: PESANAN TERBARU --}}
+        <div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-black text-slate-900">Pesanan Terbaru</h3>
+                    <h3 class="font-black text-slate-900 text-base">Pesanan Terbaru</h3>
                     <a href="{{ route('admin.orders') }}" class="text-xs font-bold text-orange-600 hover:underline">Lihat Semua</a>
                 </div>
                 <div class="space-y-4">
                     @foreach($recentOrders as $order)
                     <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xs font-bold text-slate-400">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-white rounded-full flex items-center justify-center text-xs font-bold text-slate-400">
                                 #
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-slate-900">{{ $order->user->name ?? 'Pelanggan Offline' }}</p>
+                                <p class="text-xs font-bold text-slate-900">{{ $order->user->name ?? 'Pelanggan Offline' }}</p>
                                 <p class="text-[10px] text-slate-500">{{ $order->created_at->locale('id')->diffForHumans() }}</p>
                             </div>
                         </div>
@@ -122,35 +128,33 @@
                             elseif (in_array($statusName, ['shipping', 'dikirim'])) $statusDisplay = 'Dikirim';
                         @endphp
                         
-                        {{-- 🌟 MODIFIKASI WRAPPER: Menyatukan Badge Status dengan Akses Cepat Link WA Kurir --}}
-                        <div class="flex flex-col items-end gap-1.5">
+                        <div class="flex flex-col items-end gap-1">
                             @if($statusName === 'pending')
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-orange-100 text-orange-600 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-orange-100 text-orange-600 uppercase">
                                     {{ $statusDisplay }}
                                 </span>
                             @elseif(in_array($statusName, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak', 'shipping', 'dikirim']))
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-600 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-blue-100 text-blue-600 uppercase">
                                     {{ $statusDisplay }}
                                 </span>
                             @elseif(in_array($statusName, ['done', 'selesai']))
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-600 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-600 uppercase">
                                     {{ $statusDisplay }}
                                 </span>
                             @elseif(in_array($statusName, ['canceled', 'batal']))
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-600 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-rose-100 text-rose-600 uppercase">
                                     {{ $statusDisplay }}
                                 </span>
                             @else
-                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-slate-100 text-slate-600 uppercase">
                                     {{ $statusDisplay }}
                                 </span>
                             @endif
 
-                            {{-- 🌟 REVISI PAK BILI POIN 6: Tombol Otomatis Kirim Link Validasi Kurir Lapangan via WhatsApp --}}
                             @if(in_array($statusName, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak', 'shipping', 'dikirim']))
                                 <a href="https://wa.me/?text=Halo%20Kurir%20Ilin%20Catering,%20mohon%20klik%20tautan%20ini%20untuk%20validasi%20jika%20hantaran%20sudah%20sampai%20dan%20COD%20lunas%20di%20lokasi%20pelanggan:%20{{ route('kurir.validasi', $order->order_number) }}" 
                                    target="_blank" 
-                                   class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md transition shadow-xs whitespace-nowrap">
+                                   class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded transition whitespace-nowrap">
                                     <i class="fa-brands fa-whatsapp"></i> Link Kurir
                                 </a>
                             @endif
@@ -161,54 +165,70 @@
             </div>
         </div>
 
-        <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-200 flex flex-col">
-            <h3 class="font-black mb-6 flex items-center gap-2 shrink-0">
-                <i class="fa-solid fa-calendar-day text-orange-500"></i>
-                Jadwal Masak Terdekat
-            </h3>
-            
-            <div class="space-y-6 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar-dark">
-                @foreach($upcomingSchedules as $schedule)
-                    @php
-                        $tanggalAcara = \Carbon\Carbon::parse($schedule->event_date)->startOfDay();
-                        $hariIni = \Carbon\Carbon::now()->startOfDay();
-                        $sisaHari = $hariIni->diffInDays($tanggalAcara, false);
-                        $isMendekati = ($sisaHari >= 1 && $sisaHari <= 3);
-                    @endphp
+        {{-- KOLOM 2: KALENDER PEMANTAU JADWAL BULANAN ADMIN --}}
+        <div class="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="font-black text-slate-900 text-base mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar text-orange-600"></i>
+                    Kalender Pemantau Kuota
+                </h3>
+                {{-- 🌟 FIX TAMPILAN: Container luar menggunakan overflow-x-auto, isi dalam flex-col agar pas sempurna --}}
+                <div class="w-full overflow-x-auto bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col items-center">
+                    <input type="text" id="admin_dashboard_calendar" class="hidden">
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-orange-700 px-1">
+                    <span class="w-2.5 h-2.5 bg-orange-100 border border-orange-300 rounded-md inline-block"></span> Tanggal Terisi Pesanan / Google Agenda
+                </div>
+            </div>
+        </div>
 
-                    <div class="border-l-4 {{ $isMendekati ? 'border-orange-500 bg-orange-500/10' : 'border-slate-700' }} pl-4 py-2 rounded-r-xl transition-all relative overflow-hidden">
-                        <div class="flex justify-between items-start relative z-10">
-                            <div>
-                                <p class="text-xs {{ $isMendekati ? 'text-orange-400' : 'text-slate-400' }} font-bold uppercase tracking-widest">{{ \Carbon\Carbon::parse($schedule->event_date)->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</p>
-                                <p class="font-bold text-lg text-white mt-1">{{ \Carbon\Carbon::parse($schedule->event_time)->format('H:i') }} WITA</p>
+        {{-- KOLOM 3: JADWAL MASAK TERDEKAT --}}
+        <div class="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-xl shadow-slate-200 flex flex-col justify-between">
+            <div>
+                <h3 class="font-black text-base mb-6 flex items-center gap-2 shrink-0">
+                    <i class="fa-solid fa-calendar-day text-orange-500"></i>
+                    Jadwal Masak Terdekat
+                </h3>
+                
+                <div class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar-dark">
+                    @foreach($upcomingSchedules as $schedule)
+                        @php
+                            $tanggalAcara = \Carbon\Carbon::parse($schedule->event_date)->startOfDay();
+                            $hariIni = \Carbon\Carbon::now()->startOfDay();
+                            $sisaHari = $hariIni->diffInDays($tanggalAcara, false);
+                            $isMendekati = ($sisaHari >= 1 && $sisaHari <= 3);
+                        @endphp
+
+                        <div class="border-l-4 {{ $isMendekati ? 'border-orange-500 bg-orange-500/10' : 'border-slate-700' }} pl-3 py-1.5 rounded-r-xl transition-all relative overflow-hidden">
+                            <div class="flex justify-between items-start relative z-10">
+                                <div>
+                                    <p class="text-[10px] {{ $isMendekati ? 'text-orange-400' : 'text-slate-400' }} font-bold uppercase tracking-widest">{{ \Carbon\Carbon::parse($schedule->event_date)->locale('id')->isoFormat('dddd, D MMM YYYY') }}</p>
+                                    <p class="font-bold text-base text-white mt-0.5">{{ \Carbon\Carbon::parse($schedule->event_time)->format('H:i') }} WITA</p>
+                                </div>
+                                
+                                @if($isMendekati)
+                                    <span class="bg-orange-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-wider animate-pulse shadow-[0_0_10px_rgba(234,88,12,0.6)]">
+                                        ⚠️ H-{{ $sisaHari }}
+                                    </span>
+                                @endif
                             </div>
                             
-                            @if($isMendekati)
-                                <span class="bg-orange-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider animate-pulse shadow-[0_0_10px_rgba(234,88,12,0.6)]">
-                                    ⚠️ H-{{ $sisaHari }} PERSIAPAN
-                                </span>
-                            @endif
+                            <p class="text-xs text-slate-400 italic mt-1 relative z-10 truncate">#{{ $schedule->order_number }} - {{ $schedule->recipient_name }}</p>
                         </div>
-                        
-                        <p class="text-sm text-slate-400 italic mt-1.5 relative z-10">Pesanan: #{{ $schedule->order_number }} - {{ $schedule->recipient_name }}</p>
-                        
-                        @if($isMendekati)
-                            <div class="absolute -left-10 top-0 w-20 h-full bg-orange-500 blur-2xl opacity-20 z-0"></div>
-                        @endif
-                    </div>
-                @endforeach
+                    @endforeach
 
-                @if($upcomingSchedules->isEmpty())
-                    <div class="text-center py-6 border border-dashed border-slate-700 rounded-2xl">
-                        <i class="fa-solid fa-mug-hot text-slate-600 text-2xl mb-2 block"></i>
-                        <p class="text-slate-500 italic text-sm">Dapur sedang santai. Belum ada jadwal masak.</p>
-                    </div>
-                @endif
+                    @if($upcomingSchedules->isEmpty())
+                        <div class="text-center py-6 border border-dashed border-slate-700 rounded-2xl">
+                            <i class="fa-solid fa-mug-hot text-slate-600 text-xl mb-2 block"></i>
+                            <p class="text-slate-500 italic text-xs">Dapur sedang santai. Belum ada jadwal.</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- Leaderboard --}}
+    {{-- LEADERBOARD --}}
     <div class="grid grid-cols-1 gap-4 mt-8">
         <div class="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-slate-100">
             <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
@@ -301,7 +321,54 @@
 
 </div>
 
+{{-- 🌟 SCRIPT INTERAKTIF DASHBOARD KALENDER SINKRONISASI TOTAL (LOCAL DB + GOOGLE API) --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const localDates = @json(collect($upcomingSchedules)->pluck('event_date')->map(fn($d) => date('Y-m-d', strtotime($d)))->toArray());
+        const googleDates = @json($googleDates ?? []);
+        const orderDates = [...new Set([...localDates, ...googleDates])];
+
+        flatpickr("#admin_dashboard_calendar", {
+            inline: true,
+            dateFormat: "Y-m-d",
+            locale: { firstDayOfWeek: 1 },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                const localDateStr = dayElem.dateObj.getFullYear() + '-' +
+                    String(dayElem.dateObj.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(dayElem.dateObj.getDate()).padStart(2, '0');
+
+                if (orderDates.includes(localDateStr)) {
+                    dayElem.classList.add("admin-has-order");
+                }
+            }
+        });
+    });
+</script>
+
 <style>
+    /* 🌟 FIX CSS UTAMA: Kalender dipaksa di lebar asli tanpa memotong kolom */
+    .flatpickr-calendar {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 308px !important; /* Kunci ukuran grid dasar flatpickr */
+        min-width: 308px !important;
+    }
+    .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 800 !important;
+        color: #0f172a !important;
+    }
+    .flatpickr-day.admin-has-order {
+        background: #ffedd5 !important;
+        color: #ea580c !important;
+        border-radius: 12px !important;
+        font-weight: 900 !important;
+        border: 1px solid #fed7aa !important;
+    }
+    .flatpickr-day.admin-has-order:hover {
+        background: #fed7aa !important;
+    }
+    
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
