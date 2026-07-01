@@ -62,10 +62,20 @@
                     </td>
 
                     <td class="p-4 sm:p-6">
-                        <button onclick="openModal('modal-{{ $order->id }}')" class="flex items-center gap-2 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 transition group">
-                            <i class="fa-solid fa-circle-info transition group-hover:scale-110"></i>
-                            <span class="whitespace-nowrap">Lihat Detail Nota</span>
-                        </button>
+                        <div class="flex flex-col gap-1.5 items-start">
+                            <button onclick="openModal('modal-{{ $order->id }}')" class="flex items-center gap-2 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 transition group">
+                                <i class="fa-solid fa-circle-info transition group-hover:scale-110"></i>
+                                <span class="whitespace-nowrap">Lihat Detail Nota</span>
+                            </button>
+                            
+                            {{-- 🌟 TAMBAHAN: Akses Tombol Cepat Foto Bukti Khusus Riwayat Arsip Selesai --}}
+                            @if($order->bukti_foto)
+                                <button onclick="openModal('modal-photo-{{ $order->id }}')" class="flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-orange-600 transition group">
+                                    <i class="fa-solid fa-image text-orange-500 transition group-hover:scale-110"></i>
+                                    <span class="whitespace-nowrap">Lihat Bukti Lapangan</span>
+                                </button>
+                            @endif
+                        </div>
                     </td>
 
                     <td class="p-4 sm:p-6">
@@ -149,7 +159,7 @@
                 @foreach($order->items as $item)
                 <div class="border-b border-slate-100 pb-3 px-1">
                     <div class="flex justify-between items-start">
-                        <div>
+                        <div class="pr-2">
                             <p class="font-bold text-slate-900 text-xs sm:text-sm">{{ $item->menu->title }}</p>
                             <p class="text-[10px] sm:text-[11px] text-slate-500">{{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}</p>
                         </div>
@@ -175,6 +185,26 @@
         </div>
     </div>
 </div>
+@endforeach
+
+{{-- ================= 🌟 POP-UP MODAL INJEKSI KHUSUS FOTO ARSIP BUKTI HANTARAN LAPANGAN ================= --}}
+@foreach($archivedOrders as $order)
+    @if($order->bukti_foto)
+    <div id="modal-photo-{{ $order->id }}" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl relative text-center flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h4 class="font-black text-slate-900 text-sm uppercase tracking-tight flex items-center gap-1.5"><i class="fa-solid fa-camera text-orange-500"></i> Dokumentasi Arsip Hantaran</h4>
+                <button onclick="closeModal('modal-photo-{{ $order->id }}')" class="text-slate-400 hover:text-red-500 text-2xl outline-none">&times;</button>
+            </div>
+            <div class="overflow-y-auto mb-4">
+                <img src="{{ asset('storage/' . $order->bukti_foto) }}" alt="Foto Bukti Lapangan" class="w-full h-80 object-cover rounded-2xl border border-slate-100 shadow-inner">
+            </div>
+            <button type="button" onclick="closeModal('modal-photo-{{ $order->id }}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition">
+                Tutup Jendela Bukti
+            </button>
+        </div>
+    </div>
+    @endif
 @endforeach
 
 <script>

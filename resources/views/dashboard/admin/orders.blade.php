@@ -119,11 +119,18 @@
                                         </button>
                                     </form>
                                 @endif
+
+                                {{-- 🌟 TAMBAHAN: Tombol Interaktif Pengintip Bukti Foto Lapangan Kurir --}}
+                                @if($order->bukti_foto)
+                                    <button type="button" onclick="openModal('modal-photo-{{ $order->id }}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl transition shadow-xs text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                        <i class="fa-solid fa-image text-orange-500"></i> Lihat Bukti Kurir
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
                     @endforeach
-                </tbody>
+                </div>
             </table>
         </div>
     </div>
@@ -170,7 +177,6 @@
                 </div>
             </div>
 
-            {{-- Bagian Pilihan Rincian Item Menu Katering --}}
             <div class="border-t border-slate-100 pt-3">
                 <div class="flex justify-between items-center mb-2">
                     <label class="block font-black text-slate-900 uppercase tracking-wider text-[10px]">Daftar Menu Dipesan <span class="text-rose-500">*</span></label>
@@ -179,7 +185,6 @@
                     </button>
                 </div>
 
-                {{-- Container Baris Porsi Dinamis --}}
                 <div id="manual-menu-container" class="space-y-3">
                     <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-slate-50 p-3 rounded-2xl border border-slate-100 relative group">
                         <div class="flex-1 w-full">
@@ -200,7 +205,6 @@
                 </div>
             </div>
 
-            {{-- 🌟 REVISI UTAMA TAMBAHAN JAWABAN DOSEN: Dropdown pembuktian kas masuk katering offline --}}
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100/80">
                 <label class="block font-black text-slate-800 uppercase tracking-wider text-[10px] mb-2">
                     <i class="fa-solid fa-money-bill-transfer text-orange-500 mr-1"></i> Verifikasi Pembayaran Awal <span class="text-rose-500">*</span>
@@ -249,7 +253,7 @@
             </div>
 
             <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-100 mb-4 sm:mb-6 shadow-inner">
-                <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase mb-2 sm:mb-3 tracking-widest">Alamat Penerima:</p>
+                <p class="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Alamat Penerima:</p>
                 <div class="flex items-center gap-2 mb-1">
                     <i class="fa-solid fa-user text-slate-400 text-[10px] sm:text-xs"></i>
                     <p class="text-xs sm:text-sm font-bold text-slate-900">{{ $order->recipient_name }}</p>
@@ -313,6 +317,26 @@
         </div>
     </div>
 </div>
+@endforeach
+
+{{-- ================= 🌟 POP-UP MODAL 3: INJEKSI KHUSUS PREVIEW FOTO BUKTI HANTARAN LAPANGAN KURIR ================= --}}
+@foreach($orders as $order)
+    @if($order->bukti_foto)
+    <div id="modal-photo-{{ $order->id }}" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl relative text-center flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h4 class="font-black text-slate-900 text-sm uppercase tracking-tight flex items-center gap-1.5"><i class="fa-solid fa-camera text-orange-500"></i> Dokumentasi Lapangan</h4>
+                <button onclick="closeModal('modal-photo-{{ $order->id }}')" class="text-slate-400 hover:text-red-500 text-2xl outline-none">&times;</button>
+            </div>
+            <div class="overflow-y-auto mb-4">
+                <img src="{{ asset('storage/' . $order->bukti_foto) }}" alt="Foto Bukti Lapangan" class="w-full h-80 object-cover rounded-2xl border border-slate-100 shadow-inner">
+            </div>
+            <button type="button" onclick="closeModal('modal-photo-{{ $order->id }}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition">
+                Tutup Jendela Bukti
+            </button>
+        </div>
+    </div>
+    @endif
 @endforeach
 
 {{-- FIX KOTAK BANK MENU --}}

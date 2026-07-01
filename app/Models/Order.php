@@ -23,6 +23,7 @@ class Order extends Model
         'remaining_payment',
         'snap_token',     
         'payment_status', 
+        'bukti_foto',     // 🚀 TAMBAHAN: Diizinkan untuk menyimpan path foto bukti hantaran lapangan kurir
     ];
 
     /**
