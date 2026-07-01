@@ -45,7 +45,7 @@
         </div>
     </div>
 
-    {{-- Statistik Cards (5 Kolom Sejajar Presisi) --}}
+    {{-- Statistik Cards --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-slate-100">
             <div class="w-10 h-10 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-3 text-base">
@@ -88,7 +88,7 @@
         </div>
     </div>
 
-    {{-- Main Row Tengah (Pesanan Terbaru & Jadwal Dapur Berfitur Skrol) --}}
+    {{-- Main Row Tengah --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div class="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
             <div>
@@ -109,10 +109,9 @@
                             </div>
                         </div>
                         
-                        {{-- 🌟 PERBAIKAN: Kamus Penerjemah Status Otomatis --}}
                         @php 
                             $statusName = strtolower($order->status); 
-                            $statusDisplay = $order->status; // Default fallback
+                            $statusDisplay = $order->status;
 
                             if (in_array($statusName, ['done', 'selesai'])) $statusDisplay = 'Selesai';
                             elseif (in_array($statusName, ['canceled', 'batal'])) $statusDisplay = 'Batal';
@@ -123,27 +122,39 @@
                             elseif (in_array($statusName, ['shipping', 'dikirim'])) $statusDisplay = 'Dikirim';
                         @endphp
                         
-                        @if($statusName === 'pending')
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-orange-100 text-orange-600 uppercase">
-                                {{ $statusDisplay }}
-                            </span>
-                        @elseif(in_array($statusName, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak', 'shipping', 'dikirim']))
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-600 uppercase">
-                                {{ $statusDisplay }}
-                            </span>
-                        @elseif(in_array($statusName, ['done', 'selesai']))
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-600 uppercase">
-                                {{ $statusDisplay }}
-                            </span>
-                        @elseif(in_array($statusName, ['canceled', 'batal']))
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-600 uppercase">
-                                {{ $statusDisplay }}
-                            </span>
-                        @else
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 uppercase">
-                                {{ $statusDisplay }}
-                            </span>
-                        @endif
+                        {{-- 🌟 MODIFIKASI WRAPPER: Menyatukan Badge Status dengan Akses Cepat Link WA Kurir --}}
+                        <div class="flex flex-col items-end gap-1.5">
+                            @if($statusName === 'pending')
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-orange-100 text-orange-600 uppercase">
+                                    {{ $statusDisplay }}
+                                </span>
+                            @elseif(in_array($statusName, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak', 'shipping', 'dikirim']))
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-600 uppercase">
+                                    {{ $statusDisplay }}
+                                </span>
+                            @elseif(in_array($statusName, ['done', 'selesai']))
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-600 uppercase">
+                                    {{ $statusDisplay }}
+                                </span>
+                            @elseif(in_array($statusName, ['canceled', 'batal']))
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-600 uppercase">
+                                    {{ $statusDisplay }}
+                                </span>
+                            @else
+                                <span class="px-3 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 uppercase">
+                                    {{ $statusDisplay }}
+                                </span>
+                            @endif
+
+                            {{-- 🌟 REVISI PAK BILI POIN 6: Tombol Otomatis Kirim Link Validasi Kurir Lapangan via WhatsApp --}}
+                            @if(in_array($statusName, ['confirmed', 'cooking', 'lunas dp', 'konfirmasi', 'dimasak', 'shipping', 'dikirim']))
+                                <a href="https://wa.me/?text=Halo%20Kurir%20Ilin%20Catering,%20mohon%20klik%20tautan%20ini%20untuk%20validasi%20jika%20hantaran%20sudah%20sampai%20dan%20COD%20lunas%20di%20lokasi%20pelanggan:%20{{ route('kurir.validasi', $order->order_number) }}" 
+                                   target="_blank" 
+                                   class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md transition shadow-xs whitespace-nowrap">
+                                    <i class="fa-brands fa-whatsapp"></i> Link Kurir
+                                </a>
+                            @endif
+                        </div>
                     </div>
                     @endforeach
                 </div>
@@ -197,8 +208,8 @@
         </div>
     </div>
 
-    {{-- ================= 👑 LEADERBOARD PERINGKAT POPULARITAS DINAMIS ================= --}}
-    <div class="mt-8">
+    {{-- Leaderboard --}}
+    <div class="grid grid-cols-1 gap-4 mt-8">
         <div class="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-slate-100">
             <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-4">
                 <div>
@@ -296,7 +307,6 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-    /* Gaya Scrollbar Halus Khusus Area Box Gelap */
     .custom-scrollbar-dark::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar-dark::-webkit-scrollbar-track { background: #0f172a; }
     .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }

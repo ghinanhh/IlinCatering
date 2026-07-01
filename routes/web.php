@@ -207,3 +207,6 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 
 // Route untuk menerima laporan pembayaran otomatis dari Midtrans Webhook
 Route::post('/midtrans/callback', [PelangganController::class, 'handleNotification']);
+
+// 🌟 REVISI PAK BILI: Rute Khusus Akses Kurir Lapangan (Bypass Enkripsi Tanpa Login Akun)
+Route::get('/validasi-kurir/{order_number}', [PelangganController::class, 'kurirValidasiCod'])->name('kurir.validasi');

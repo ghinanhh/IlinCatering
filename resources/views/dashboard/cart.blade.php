@@ -1,12 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- 🌟 CDN KALENDER FLATPICKR --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <div class="mb-8">
     <h1 class="text-3xl font-extrabold text-slate-900">Keranjang Belanja 🛒</h1>
     <p class="text-slate-500">Tinjau pesananmu sebelum lanjut ke pembayaran.</p>
 </div>
 
-{{-- 🌟 MAIN FORM CHECKOUT (Ditambahkan x-data AlpineJS untuk pilihan metode pembayaran) --}}
+{{-- 🌟 FORM UTAMA CHECKOUT DENGAN ALPINE JS --}}
 <form action="{{ route('pelanggan.checkout.process') }}" method="POST" x-data="{ paymentMethod: 'dp' }">
     @csrf
 
@@ -35,20 +39,18 @@
                             </p>
                         </div>
 
-                        {{-- 🌟 FIX UPDATE QUANTITY: Tombol dihubungkan ke Form Rahasia POST di bawah biar gak eror --}}
+                        {{-- Tombol Kuantitas --}}
                         <div class="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-200">
                             @if($item->quantity > 1)
                                 <button form="decrease-form-{{ $item->id }}" type="submit" class="w-8 h-8 flex items-center justify-center bg-white rounded-xl shadow-sm hover:text-orange-600 transition text-xs font-bold outline-none cursor-pointer">
                                     -
                                 </button>
                             @else
-                                {{-- Jika porsi sudah 1, tombol minus otomatis mati (disabled) sesuai kesepakatan minimal 1 porsi --}}
                                 <button type="button" disabled class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-xl text-slate-300 cursor-not-allowed text-xs font-bold outline-none" title="Minimal pemesanan 1 porsi">
                                     -
                                 </button>
                             @endif
 
-                            {{-- 🌟 UPGRADE UTAMA: Mengubah teks biasa menjadi Input Box + Pengaman Tombol Enter --}}
                             <input type="number" value="{{ $item->quantity }}" min="1"
                                 onkeydown="if(event.key === 'Enter') { event.preventDefault(); this.blur(); }"
                                 onchange="const f = document.getElementById('manual-form-{{ $item->id }}'); if(f) { f.querySelector('.manual-qty').value = this.value; f.submit(); }"
@@ -82,7 +84,6 @@
                     </div>
                 </div>
             @empty
-                {{-- 🌟 REVISI EMPTY STATE: Tampilan kosong premium, padat, dan proporsional --}}
                 <div class="bg-white p-12 md:p-16 rounded-[2.5rem] shadow-sm border border-slate-100 text-center flex flex-col items-center justify-center min-h-[400px]">
                     <div class="w-20 h-20 bg-orange-50 text-orange-600 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
                         <i class="fa-solid fa-basket-shopping text-3xl"></i>
@@ -97,7 +98,6 @@
                 </div>
             @endforelse
 
-            {{-- Tombol "Tambah Menu Lainnya" hanya akan muncul jika keranjang ada isinya --}}
             @if($cartItems->isNotEmpty())
                 <a href="{{ route('pelanggan.menu') }}" class="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-[2rem] text-slate-400 hover:text-orange-600 hover:border-orange-600 transition group font-bold">
                     <i class="fa-solid fa-plus group-hover:rotate-90 transition duration-300"></i>
@@ -131,7 +131,7 @@
                     </div>
                 </div>
 
-                {{-- 🌟 BYPASS DUA METODE PEMBAYARAN: Radio Button Premium Berbasis AlpineJS --}}
+                {{-- Opsi Opsi Pembayaran --}}
                 <div class="bg-orange-50 p-5 rounded-2xl border border-orange-100 space-y-3">
                     <div class="flex items-center gap-2 text-orange-700 font-bold text-sm">
                         <i class="fa-solid fa-wallet"></i>
@@ -184,33 +184,44 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tanggal Acara</label>
-                            <input type="date" name="event_date" required 
-                                   min="{{ \Carbon\Carbon::now()->addDays(3)->format('Y-m-d') }}"
-                                   class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jam Pengiriman</label>
-                            <input type="time" name="event_time" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer">
+                    {{-- Kalender Inline Flatpickr --}}
+                    <div class="space-y-3 pt-4 border-t border-slate-100">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Pilih Tanggal Acara</label>
+                        
+                        <div class="w-full flex justify-center bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                            <input type="text" name="event_date" id="event_calendar" required class="hidden">
                         </div>
                         
-                        <div class="col-span-2">
-                            <p class="text-[9px] text-red-500 font-bold italic leading-tight">
-                                *Pemesanan wajib dilakukan minimal H-3 dari tanggal acara untuk keperluan persiapan bahan segar dapur katering kami.
-                            </p>
+                        <div class="flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-wider px-1">
+                            <div class="flex items-center gap-1 text-slate-500">
+                                <span class="w-2.5 h-2.5 bg-white border border-slate-300 rounded-full inline-block"></span> Tersedia
+                            </div>
+                            <div class="flex items-center gap-1 text-red-600">
+                                <span class="w-2.5 h-2.5 bg-red-100 border border-red-300 rounded-full inline-block"></span> Penuh / Terisi
+                            </div>
+                            <div class="flex items-center gap-1 text-orange-600">
+                                <span class="w-2.5 h-2.5 bg-orange-600 rounded-full inline-block"></span> Pilihanmu
+                            </div>
                         </div>
+
+                        <div class="pt-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Jam Pengiriman</label>
+                            <input type="time" name="event_time" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer">
+                        </div>
+
+                        <p class="text-[9px] text-red-500 font-bold italic leading-tight mt-2">
+                            *Pemesanan wajib dilakukan minimal H-3 dari tanggal acara untuk keperluan persiapan bahan segar dapur katering kami.
+                        </p>
                     </div>
 
-                    {{-- 🌟 MODIFIKASI BLOK CHECKOUT: Validasi Minimal 10 Porsi Keseluruhan --}}
+                    {{-- Tombol Submit Form --}}
                     @if($totalPorsi < 10)
                         <div class="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-700 text-xs font-medium space-y-1 mt-4">
                             <div class="flex items-center gap-2 font-bold text-red-800 text-sm">
                                 <i class="fa-solid fa-triangle-exclamation"></i>
                                 <span>Minimal Order Belum Tercapai</span>
                             </div>
-                            <p>Total pesanan Anda baru <strong>{{ $totalPorsi }} porsi</strong>. Ilin Catering menerapkan batas minimal porsi sebanyak <strong>10 porsi</strong> untuk mengunci tanggal operasional dapur katering.</p>
+                            <p>Total pesanan Anda baru <strong>{{ $totalPorsi }} porsi</strong>. Ilin Catering menerapkan batas minimal porsi sebanyak <strong>10 porsi</strong>.</p>
                         </div>
 
                         <button type="button" class="w-full py-4 bg-slate-300 text-white rounded-2xl font-bold cursor-not-allowed flex items-center justify-center gap-3 mt-4 shadow-none" disabled>
@@ -234,7 +245,7 @@
     </div>
 </form>
 
-{{-- 🌟 FORM RAHASIA HAPUS ITEM --}}
+{{-- FORM RAHASIA UPDATE & HAPUS QUANTITY --}}
 @foreach($cartItems as $item)
     <form id="delete-form-{{ $item->id }}" action="{{ route('pelanggan.cart.removeItem', $item->id) }}" method="POST" class="hidden">
         @csrf
@@ -242,7 +253,6 @@
     </form>
 @endforeach
 
-{{-- 🌟 FORM RAHASIA UPDATE QUANTITY --}}
 @foreach($cartItems as $item)
     <form id="decrease-form-{{ $item->id }}" action="{{ route('pelanggan.cart.updateQuantity', $item->id) }}" method="POST" class="hidden">
         @csrf
@@ -255,7 +265,6 @@
     </form>
 @endforeach
 
-{{-- 🌟 FORM RAHASIA BARU: UPDATE QUANTITY MANUALLY --}}
 @foreach($cartItems as $item)
     <form id="manual-form-{{ $item->id }}" action="{{ route('pelanggan.cart.updateQuantity', $item->id) }}" method="POST" class="hidden">
         @csrf
@@ -265,28 +274,48 @@
     </form>
 @endforeach
 
-{{-- 🌟 SCRIPT OTOMATIS: MENOLAK PILIHAN TANGGAL YANG SUDAH PENUH --}}
+{{-- SCRIPT KALENDER INTEGRASI --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const bookedDates = @json($bookedDates ?? []);
-        const dateInput = document.querySelector('input[name="event_date"]');
         
-        if (dateInput) {
-            dateInput.addEventListener('change', function() {
-                const selectedDate = this.value;
-                if (bookedDates.includes(selectedDate)) {
-                    alert('⚠️ Maaf, tanggal ini sudah penuh! Ilin Catering menerapkan batas maksimal 1 pesanan besar per hari demi menjaga kualitas masakan. Silakan pilih tanggal alternatif lain.');
-                    this.value = '';
-                }
-            });
-        }
+        flatpickr("#event_calendar", {
+            inline: true,
+            minDate: new Date().fp_incr(3),
+            dateFormat: "Y-m-d",
+            disable: bookedDates,
+            locale: { firstDayOfWeek: 1 }
+        });
     });
 </script>
 
 <style>
+    .flatpickr-calendar {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 300px !important;
+    }
+    .flatpickr-months .flatpickr-month, .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 800 !important;
+        color: #0f172a !important;
+    }
+    .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover {
+        background: #fee2e2 !important;
+        color: #ef4444 !important;
+        border-color: #fee2e2 !important;
+        text-decoration: line-through;
+        cursor: not-allowed !important;
+        font-weight: bold;
+    }
+    .flatpickr-day.selected, .flatpickr-day.selected:hover {
+        background: #ea580c !important;
+        border-color: #ea580c !important;
+        color: white !important;
+    }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 </style>
 @endsection

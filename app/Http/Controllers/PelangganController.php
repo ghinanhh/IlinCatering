@@ -7,15 +7,15 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Review;
-use App\Models\User; // 🌟 TAMBAHAN: Import Model User
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Midtrans\Config;
 use Midtrans\Snap;
-use Google\Client; // 🌟 TAMBAHAN: Import Google Client
-use Google\Service\Calendar; // 🌟 TAMBAHAN: Import Google Calendar
-use Google\Service\Calendar\Event; // 🌟 TAMBAHAN: Import Google Event
+use Google\Client;
+use Google\Service\Calendar;
+use Google\Service\Calendar\Event;
 
 class PelangganController extends Controller
 {
@@ -71,7 +71,6 @@ class PelangganController extends Controller
             } elseif ($request->action === 'decrease') {
                 $cart->quantity > 1 ? $cart->decrement('quantity') : $cart->delete();
             } elseif ($request->action === 'manual' || $request->has('qty') || $request->has('quantity')) {
-                // 🌟 FIX UPDATE QUANTITY: Menerima input ketikan manual (Enter/Blur) dari request 'qty'
                 $qtyInput = $request->input('qty') ?? $request->input('quantity');
                 $qty = (int) $qtyInput;
                 $qty > 0 ? $cart->update(['quantity' => $qty]) : $cart->delete();
@@ -98,11 +97,58 @@ class PelangganController extends Controller
     {
         $cartItems = Cart::with('menu')->where('user_id', Auth::id())->get();
         
-        // 🌟 REVISI DOSEN: Tanggal penuh tidak berlaku diblokir jika yang memesan adalah user yang sama
+        // 1. Ambil tanggal penuh dari database lokal (kecuali milik user yang sedang login)
         $bookedDates = Order::whereNotIn('status', ['batal', 'canceled', 'expired'])
             ->where('user_id', '!=', Auth::id())
             ->pluck('event_date')
+            ->map(fn($date) => date('Y-m-d', strtotime($date)))
             ->toArray();
+
+        // 2. SINKRONISASI AMAN: Ambil langsung dari Google Calendar Admin di Background
+        try {
+            $admin = User::whereNotNull('google_calendar_token')
+                         ->where('google_calendar_token', '!=', 'null')
+                         ->first();
+
+            if ($admin) {
+                $token = json_decode($admin->google_calendar_token, true);
+                if (is_array($token)) {
+                    $client = new Client();
+                    $client->setClientId(config('services.google.client_id'));
+                    $client->setClientSecret(config('services.google.client_secret'));
+                    $client->setAccessToken($token);
+
+                    if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+                        $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                        $admin->google_calendar_token = json_encode($newToken);
+                        $admin->save();
+                        $client->setAccessToken($newToken);
+                    }
+
+                    $service = new Calendar($client);
+                    
+                    $optParams = [
+                        'timeMin' => date('c'),
+                        'timeMax' => date('c', strtotime('+3 months')),
+                        'singleEvents' => true,
+                    ];
+                    $events = $service->events->listEvents('primary', $optParams);
+
+                    foreach ($events->getItems() as $event) {
+                        $start = $event->getStart();
+                        $dateStr = $start->getDateTime() ?? $start->getDate();
+                        if ($dateStr) {
+                            $formattedDate = date('Y-m-d', strtotime($dateStr));
+                            if (!in_array($formattedDate, $bookedDates)) {
+                                $bookedDates[] = $formattedDate;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Gagal sinkronisasi Google Calendar ke Halaman Pelanggan: ' . $e->getMessage());
+        }
 
         return view('dashboard.cart', compact('cartItems', 'bookedDates'));
     }
@@ -112,19 +158,17 @@ class PelangganController extends Controller
         $request->validate([
             'recipient_name' => 'required', 'phone_number' => 'required', 'address' => 'required',
             'event_date' => 'required', 'event_time' => 'required', 'cart_notes' => 'nullable|array',
-            'payment_option' => 'required|in:dp,lunas' // Validasi opsi input dari form depan
+            'payment_option' => 'required|in:dp,lunas'
         ]);
 
         $cartItems = Cart::where('user_id', Auth::id())->get();
         if ($cartItems->isEmpty()) return redirect()->back()->with('error', 'Keranjang kosong.');
 
-        // 🌟 AMANKAN BACK-END: Validasi total porsi wajib minimal 10 porsi sebelum simpan ke database
         $totalPorsi = $cartItems->sum('quantity');
         if ($totalPorsi < 10) {
             return redirect()->back()->with('error', 'Mohon maaf, total pemesanan katering minimal wajib 10 porsi.');
         }
 
-        // 🌟 REVISI DOSEN: Hitung kuota tanggal penuh hanya dari pesanan ORANG LAIN (User sama bisa tambah pesanan)
         $existingOrderCount = Order::where('event_date', $request->event_date)
             ->whereNotIn('status', ['batal', 'canceled', 'expired'])
             ->where('user_id', '!=', Auth::id())
@@ -132,18 +176,17 @@ class PelangganController extends Controller
 
         if ($existingOrderCount >= 1) {
             return redirect()->back()
-                ->with('error', 'Maaf, kuota pemesanan untuk tanggal ' . date('d-m-Y', strtotime($request->event_date)) . ' sudah penuh (Ilin Catering menerapkan batas maksimal 1 pesanan besar per hari). Silakan pilih tanggal alternatif lain!')
+                ->with('error', 'Maaf, kuota pemesanan untuk tanggal ' . date('d-m-Y', strtotime($request->event_date)) . ' sudah penuh. Silakan pilih tanggal alternatif lain!')
                 ->withInput();
         }
 
         $totalPrice = $cartItems->sum(fn($i) => $i->menu->price * $i->quantity);
 
-        // 🌟 TAHAPAN BYPASS PERHITUNGAN: Menghitung pembagian nominal berdasarkan pilihan user
         if ($request->payment_option === 'lunas') {
-            $dpAmount = $totalPrice;      // Wajib bayar di awal full 100%
-            $remainingPayment = 0;        // Sisa tagihan COD jadi nol
+            $dpAmount = $totalPrice;
+            $remainingPayment = 0;
         } else {
-            $dpAmount = $totalPrice * 0.3; // Skema DP Tradisional 30%
+            $dpAmount = $totalPrice * 0.3;
             $remainingPayment = $totalPrice * 0.7;
         }
 
@@ -167,7 +210,6 @@ class PelangganController extends Controller
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
         try {
-            // Gross amount dinamis mengikuti kolom dp_amount yang menampung kewajiban bayar sekarang
             $snapToken = Snap::getSnapToken(['transaction_details' => ['order_id' => $order->order_number, 'gross_amount' => (int) $order->dp_amount]]);
             $order->update(['snap_token' => $snapToken]);
         } catch (\Exception $e) { \Log::error($e->getMessage()); }
@@ -189,37 +231,26 @@ class PelangganController extends Controller
     public function storeReview(Request $request)
     {
         $request->validate([
-            'order_id' => 'required', 
-            'menu_id' => 'required', 
-            'rating' => 'required', 
-            'comment' => 'required',
-            'user_title' => 'nullable|string'
+            'order_id' => 'required', 'menu_id' => 'required', 'rating' => 'required', 
+            'comment' => 'required', 'user_title' => 'nullable|string'
         ]);
         
         $imagePath = null;
-        
         if ($request->hasFile('image')) {
             $filename = time() . '_' . Str::random(8) . '.jpg';
-            
             $destinationPath = public_path('storage/reviews');
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
+            if (!file_exists($destinationPath)) { mkdir($destinationPath, 0755, true); }
 
             $imageSource = imagecreatefromstring(file_get_contents($request->file('image')));
             imagejpeg($imageSource, $destinationPath . '/' . $filename, 60);
-            imagedestroy($imageSource); 
+            imagedestroy($imageSource); // 🌟 FIX: Sudah kembali menggunakan fungsi destroy bawaan GD PHP
 
             $imagePath = 'storage/reviews/' . $filename;
         }
 
         Review::create([
-            'user_id' => Auth::id(), 
-            'order_id' => $request->order_id, 
-            'menu_id' => $request->menu_id,
-            'rating' => $request->rating, 
-            'comment' => $request->comment, 
-            'image' => $imagePath,
+            'user_id' => Auth::id(), 'order_id' => $request->order_id, 'menu_id' => $request->menu_id,
+            'rating' => $request->rating, 'comment' => $request->comment, 'image' => $imagePath,
             'user_title' => $request->user_title 
         ]);
 
@@ -231,15 +262,20 @@ class PelangganController extends Controller
         $payload = $request->getContent();
         $notification = json_decode($payload);
         $order = Order::where('order_number', $notification->order_id)->first();
+        
         if ($order) {
-            $isPaid = in_array($notification->transaction_status, ['settlement', 'capture']);
-            // Status diset dinamis: kalau lunas total (sisa 0) statusnya 'lunas', kalau bayar cicilan statusnya 'lunas dp'
-            $status = $isPaid ? ($order->remaining_payment == 0 ? 'lunas' : 'lunas dp') : 'pending';
-            $order->update(['status' => $status, 'payment_status' => $notification->transaction_status]);
-
-            // 🚀 SAMBUNGAN KABEL: Jika berhasil dibayar aman lewat Midtrans, kirim otomatis ke Google Calendar
-            if ($isPaid) {
+            $transaction = $notification->transaction_status;
+            
+            if (in_array($transaction, ['settlement', 'capture'])) {
+                $status = ($order->remaining_payment == 0 ? 'lunas' : 'lunas dp');
+                $order->update(['status' => $status, 'payment_status' => $transaction]);
                 $this->addToGoogleCalendar($order);
+            } 
+            elseif (in_array($transaction, ['expire', 'cancel', 'deny'])) {
+                $order->update(['status' => 'canceled', 'payment_status' => $transaction]);
+            } 
+            else {
+                $order->update(['payment_status' => $transaction]);
             }
         }
         return response()->json(['message' => 'ok']);
@@ -248,9 +284,16 @@ class PelangganController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $order = Order::findOrFail($id);
+        
+        if (in_array(strtolower($request->status), ['done', 'selesai'])) {
+            $today = date('Y-m-d');
+            if ($today < $order->event_date) {
+                return redirect()->back()->with('error', 'Gagal! Pesanan tidak dapat diselesaikan sebelum tanggal hari H acara (' . date('d-m-Y', strtotime($order->event_date)) . ').');
+            }
+        }
+
         $order->update(['status' => $request->status]);
 
-        // 🚀 SAMBUNGAN KABEL: Kirim ke Google Calendar jika status valid (Ditambahkan 'lunas' agar tetap sinkron)
         if (in_array($request->status, ['confirmed', 'cooking', 'lunas dp', 'lunas', 'konfirmasi', 'dimasak'])) {
             $this->addToGoogleCalendar($order);
         }
@@ -258,13 +301,44 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Status pesanan diupdate ke ' . $request->status);
     }
 
-    /**
-     * 🍳 KODINGAN AMAN GOOGLE CALENDAR UNTUK WEBHOOK MIDTRANS + ANTI DUPLIKAT
-     */
+    public function kurirValidasiCod($order_number)
+    {
+        $order = Order::where('order_number', $order_number)->firstOrFail();
+        
+        if ($order->status === 'selesai') {
+            return "
+                <div style='text-align: center; font-family: sans-serif; padding: 50px;'>
+                    <h1 style='color: #10b981;'>🍱 Ilin Catering</h1>
+                    <p style='color: #64748b;'>Pesanan <strong>{$order_number}</strong> sudah pernah divalidasi sebelumnya.</p>
+                    <p style='font-size: 12px; color: #94a3b8;'>Made with ♡ by Ghina</p>
+                </div>
+            ";
+        }
+
+        $order->update([
+            'status' => 'selesai',
+            'payment_status' => 'settlement',
+            'remaining_payment' => 0
+        ]);
+
+        return "
+            <div style='text-align: center; font-family: sans-serif; padding: 50px; background: #f8fafc; min-height: 100vh;'>
+                <div style='background: white; max-width: 400px; margin: 0 auto; padding: 30px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);'>
+                    <div style='font-size: 50px;'>✅</div>
+                    <h2 style='color: #0f172a; margin-top: 10px;'>Hantaran Selesai!</h2>
+                    <p style='color: #475569; font-size: 14px;'>Nomor Pesanan: <strong>{$order_number}</strong></p>
+                    <hr style='border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0;'>
+                    <p style='color: #16a34a; font-weight: bold; font-size: 15px;'>Pembayaran COD Telah Lunas</p>
+                    <p style='color: #64748b; font-size: 12px; margin-top: 5px;'>Data telah disinkronkan ke Google Calendar & Dashboard Admin secara real-time.</p>
+                </div>
+                <p style='font-size: 11px; color: #94a3b8; margin-top: 30px;'>&copy; 2026 Ilin Catering. Made with ♡ by Ghina.</p>
+            </div>
+        ";
+    }
+
     private function addToGoogleCalendar($order)
     {
         try {
-            // Failsafe: Cari akun user manapun yang menyimpan token Google Calendar di database
             $admin = User::whereNotNull('google_calendar_token')
                          ->where('google_calendar_token', '!=', 'null')
                          ->first();
@@ -279,31 +353,19 @@ class PelangganController extends Controller
             $client->setClientSecret(config('services.google.client_secret'));
             $client->setAccessToken($token);
 
-            if ($client->isAccessTokenExpired()) {
-                if ($client->getRefreshToken()) {
-                    $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
-                    $admin->google_calendar_token = json_encode($newToken);
-                    $admin->save();
-                    $client->setAccessToken($newToken);
-                } else {
-                    return;
-                }
+            if ($client->isAccessTokenExpired() && $client->getRefreshToken()) {
+                $newToken = $client->fetchAccessTokenWithRefreshToken($client->getRefreshToken());
+                $admin->google_calendar_token = json_encode($newToken);
+                $admin->save();
+                $client->setAccessToken($newToken);
             }
 
             $service = new Calendar($client);
 
-            // 🌟 LOGIKA ANTI-DUPLIKAT: Cek apakah event dengan nomor order ini sudah ada di Google Calendar
             $orderNumber = $order->order_number ?? $order->id;
-            $optParams = [
-                'q' => 'Pesanan #' . $orderNumber,
-                'maxResults' => 1,
-            ];
+            $optParams = ['q' => 'Pesanan #' . $orderNumber, 'maxResults' => 1];
             $existingEvents = $service->events->listEvents('primary', $optParams);
-            
-            // Jika sudah ada record event yang sama, batalkan pembuatan agar tidak double!
-            if (count($existingEvents->getItems()) > 0) {
-                return; 
-            }
+            if (count($existingEvents->getItems()) > 0) { return; }
 
             $orderWithItems = Order::with('items.menu')->find($order->id);
             $menuList = "";
@@ -313,21 +375,14 @@ class PelangganController extends Controller
 
             $startDateTime = $order->event_date . 'T' . $order->event_time; 
             $endDateTime = date('Y-m-d\TH:i:s', strtotime($startDateTime . ' +2 hours'));
-
             $buyerName = $order->recipient_name ?? ($order->user->name ?? 'Pelanggan Offline');
 
             $event = new Event([
                 'summary' => '🍳 Jadwal Masak: Pesanan #' . $orderNumber . ' - ' . $buyerName,
                 'location' => $order->address ?? 'Alamat Ilin Catering',
-                'description' => "Daftar Masakan yang Harus Disiapkan:\n" . $menuList . "\nCatatan Kontak: " . ($order->phone_number ?? '-'),
-                'start' => [
-                    'dateTime' => $startDateTime,
-                    'timeZone' => 'Asia/Makassar',
-                ],
-                'end' => [
-                    'dateTime' => $endDateTime,
-                    'timeZone' => 'Asia/Makassar',
-                ],
+                'description' => "Daftar Masakan:\n" . $menuList . "\nKontak: " . ($order->phone_number ?? '-'),
+                'start' => ['dateTime' => $startDateTime, 'timeZone' => 'Asia/Makassar'],
+                'end' => ['dateTime' => $endDateTime, 'timeZone' => 'Asia/Makassar'],
                 'reminders' => [
                     'useDefault' => false,
                     'overrides' => [
@@ -339,7 +394,6 @@ class PelangganController extends Controller
             ]);
 
             $service->events->insert('primary', $event);
-
         } catch (\Exception $e) {
             \Log::error('Gagal sinkronisasi Google Calendar: ' . $e->getMessage());
         }
@@ -360,18 +414,13 @@ class PelangganController extends Controller
 
     public function cetakNota($id)
     {
-        $order = Order::with('items.menu')
-                      ->where('user_id', Auth::id())
-                      ->where('id', $id)
-                      ->firstOrFail();
-
+        $order = Order::with('items.menu')->where('user_id', Auth::id())->where('id', $id)->firstOrFail();
         return view('dashboard.nota', compact('order'));
     }
 
     public function riwayat()
     {
         $user_id = Auth::id();
-        
         $totalPesanan = Order::where('user_id', $user_id)->count();
         $pesananAktif = Order::where('user_id', $user_id)->whereNotIn('status', ['done', 'selesai', 'canceled'])->count();
         $totalReview = Review::where('user_id', $user_id)->count();
