@@ -299,6 +299,9 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Status pesanan diupdate ke ' . $request->status);
     }
 
+    /**
+     * 🌟 TAHAP 1: Menampilkan Halaman Konfirmasi + Nominal Sisa Uang COD
+     */
     public function showKurirValidasi($order_number)
     {
         $order = Order::where('order_number', $order_number)->firstOrFail();
@@ -312,17 +315,27 @@ class PelangganController extends Controller
             ";
         }
 
+        // Format mata uang Rupiah untuk mempermudah kurir melihat nominal di lapangan
+        $nominalCod = "Rp " . number_format($order->remaining_payment, 0, ',', '.');
+
         return "
             <div style='text-align: center; font-family: sans-serif; padding: 40px 20px; background: #f8fafc; min-height: 100vh; display: flex; align-items: center; justify-content: center;'>
                 <div style='background: white; max-width: 400px; width: 100%; padding: 30px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;'>
                     <h2 style='color: #0f172a; margin-bottom: 5px; font-weight: 800;'>Konfirmasi Hantaran</h2>
                     <p style='color: #64748b; font-size: 13px; margin-bottom: 25px;'>Ilin Catering Lapangan</p>
+                    
                     <div style='background: #f1f5f9; padding: 15px; border-radius: 16px; text-align: left; margin-bottom: 25px;'>
                         <p style='margin: 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;'>No. Pesanan</p>
                         <p style='margin: 3px 0 10px 0; font-size: 16px; font-weight: bold; color: #0f172a;'>#{$order_number}</p>
+                        
                         <p style='margin: 0; font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;'>Penerima</p>
-                        <p style='margin: 3px 0 0 0; font-size: 14px; font-weight: bold; color: #334155;'>{$order->recipient_name}</p>
+                        <p style='margin: 3px 0 10px 0; font-size: 14px; font-weight: bold; color: #334155;'>{$order->recipient_name}</p>
+                        
+                        {{-- 🌟 BERKAS REVISI: Tampilkan Kewajiban Tagihan COD Kurir --}}
+                        <p style='margin: 0; font-size: 11px; color: #ef4444; font-weight: bold; text-transform: uppercase;'>Tagihan Uang COD</p>
+                        <p style='margin: 3px 0 0 0; font-size: 22px; font-weight: 900; color: #b91c1c;'>{$nominalCod}</p>
                     </div>
+                    
                     <form action='".route('kurir.validasi.submit', $order_number)."' method='POST'>
                         <input type='hidden' name='_token' value='".csrf_token()."'>
                         <button type='submit' style='background: #16a34a; color: white; border: none; width: 100%; padding: 15px; border-radius: 16px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.2); outline: none;'>
@@ -435,7 +448,6 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Balasan dikirim!');
     }
 
-    // 🌟 FIX: Kurung siku nakal di line 447 sudah diubah menjadi tanda kurung lingkaran biasa )
     public function cetakNota($id)
     {
         $order = Order::with('items.menu')->where('user_id', Auth::id())->where('id', $id)->firstOrFail();
