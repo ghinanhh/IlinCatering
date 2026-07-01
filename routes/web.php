@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Owner\OwnerController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\KurirController; // 🚀 TAMBAHAN: Import Controller Kurir Baru
 
 /*
 |--------------------------------------------------------------------------
@@ -209,5 +210,6 @@ Route::prefix('dashboard')->middleware('auth')->group(function () {
 Route::post('/midtrans/callback', [PelangganController::class, 'handleNotification']);
 
 // 🌟 REVISI PAK BILI: Akses Kurir Dua Tahap (Mencegah Auto-Click dari Robot WhatsApp Preview)
-Route::get('/validasi-kurir/{order_number}', [PelangganController::class, 'showKurirValidasi'])->name('kurir.validasi');
-Route::post('/validasi-kurir/{order_number}/konfirmasi', [PelangganController::class, 'kurirValidasiCod'])->name('kurir.validasi.submit');
+// 🚀 DITERUSKAN KE KURIR CONTROLLER UNTUK PROSES UPLOAD KAMERA FOTO BUKTI LAPANGAN
+Route::get('/validasi-kurir/{order_number}', [KurirController::class, 'halamanValidasi'])->name('kurir.validasi');
+Route::post('/validasi-kurir/{order_number}/konfirmasi', [KurirController::class, 'prosesValidasi'])->name('kurir.validasi.proses');
